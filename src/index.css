@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-serif: 'Cormorant Garamond', 'Cinzel', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #FAF7F2;
+    color: #2D1F17;
+  }
+
+  h1, h2, h3, .font-serif-sacred {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Elegant minimalist scrollbars in coffee tones */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F4EDE4;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4C3B3;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B8A18E;
+}
+

@@ -1,0 +1,6 @@
+{
+  "name": "MISIONTEC - Sistema de Gestión Misionero",
+  "description": "Sistema Integral de Gestión y Seguimiento Misionero con geolocalización, semáforo de alertas, fases de discipulado y control de asistencia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
