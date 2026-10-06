@@ -30,6 +30,7 @@ interface HeaderProps {
   onOpenNewPersonModal: () => void;
   onOpenFollowUpModal: (personId?: string) => void;
   selectedDistrict: string;
+  districts?: string[];
   onDistrictChange: (district: string) => void;
 }
 
@@ -46,6 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewPersonModal,
   onOpenFollowUpModal,
   selectedDistrict,
+  districts = [],
   onDistrictChange,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -200,11 +202,9 @@ export const Header: React.FC<HeaderProps> = ({
             className="bg-transparent text-xs font-medium text-[#2D1F17] focus:outline-none cursor-pointer"
           >
             <option value="all">Todas las Zonas</option>
-            <option value="Distrito Metropolitano">Distrito Metropolitano</option>
-            <option value="Distrito Central">Distrito Central</option>
-            <option value="Distrito Sur">Distrito Sur</option>
-            <option value="Distrito Este">Distrito Este</option>
-            <option value="Distrito Callao">Distrito Callao</option>
+            {districts.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
           </select>
         </div>
 

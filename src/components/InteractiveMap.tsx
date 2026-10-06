@@ -34,22 +34,30 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const mapWidth = 800;
   const mapHeight = 460;
 
+  // Los límites del mapa se calculan a partir de las coordenadas reales de
+  // los grupos guardados en la base de datos (con un margen alrededor)
+  const lats = groups.map(g => g.lat);
+  const lngs = groups.map(g => g.lng);
+  const padLat = lats.length ? Math.max((Math.max(...lats) - Math.min(...lats)) * 0.2, 0.01) : 0.1;
+  const padLng = lngs.length ? Math.max((Math.max(...lngs) - Math.min(...lngs)) * 0.2, 0.01) : 0.1;
+  const minLat = lats.length ? Math.min(...lats) - padLat : 4.05;
+  const maxLat = lats.length ? Math.max(...lats) + padLat : 4.20;
+  const minLng = lngs.length ? Math.min(...lngs) - padLng : -73.70;
+  const maxLng = lngs.length ? Math.max(...lngs) + padLng : -73.55;
+
   const latToY = (lat: number) => {
-    const minLat = -12.22;
-    const maxLat = -11.95;
     const ratio = (lat - minLat) / (maxLat - minLat);
     return mapHeight - ratio * mapHeight;
   };
 
   const lngToX = (lng: number) => {
-    const minLng = -77.16;
-    const maxLng = -76.95;
     const ratio = (lng - minLng) / (maxLng - minLng);
     return ratio * mapWidth;
   };
 
   const radiusInPixels = (km: number) => {
-    return km * 18 * zoomLevel;
+    const kmAncho = (maxLng - minLng) * 111 * Math.cos(((minLat + maxLat) / 2) * Math.PI / 180);
+    return km * (mapWidth / kmAncho) * zoomLevel;
   };
 
   const handlePinClick = (group: MissionaryGroup) => {

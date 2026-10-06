@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  INITIAL_PEOPLE, 
-  INITIAL_GROUPS, 
-  INITIAL_FOLLOW_UPS, 
-  INITIAL_NOTIFICATIONS, 
-  INITIAL_EVENTS, 
-  INITIAL_AUDIT_LOGS 
-} from './data/mockData';
+import { api } from './services/api';
 import { 
   Person, 
   MissionaryGroup, 
@@ -15,7 +8,8 @@ import {
   UserRole, 
   DiscipleshipPhase, 
   TrafficLightStatus,
-  AuditLog
+  AuditLog,
+  MissionEvent
 } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -39,12 +33,15 @@ import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 export default function App() {
   // Master state
-  const [people, setPeople] = useState<Person[]>(INITIAL_PEOPLE);
-  const [groups, setGroups] = useState<MissionaryGroup[]>(INITIAL_GROUPS);
-  const [followUps, setFollowUps] = useState<FollowUpRecord[]>(INITIAL_FOLLOW_UPS);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_AUDIT_LOGS);
-  const [events] = useState(INITIAL_EVENTS);
+  // Master state (se llena desde la base de datos MySQL a través de la API)
+  const [people, setPeople] = useState<Person[]>([]);
+  const [groups, setGroups] = useState<MissionaryGroup[]>([]);
+  const [followUps, setFollowUps] = useState<FollowUpRecord[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [events, setEvents] = useState<MissionEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // UI state
   const [currentView, setCurrentView] = useState<string>('dashboard');
@@ -77,6 +74,32 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // Carga (o recarga) todos los datos desde MySQL. Después de cada cambio se
+  // vuelve a llamar para que el semáforo, las alertas y los indicadores
+  // salgan de las vistas de la base de datos y no de cálculos en el navegador.
+  const loadData = async () => {
+    try {
+      const data = await api.cargarTodo();
+      setPeople(data.people);
+      setGroups(data.groups);
+      setFollowUps(data.followUps);
+      setNotifications(data.notifications);
+      setEvents(data.events);
+      setAuditLogs(data.auditLogs);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const districts = Array.from(new Set(groups.map(g => g.district))).sort();
+
   // RBAC Role Change Handler
   const handleRoleChange = (newRole: UserRole) => {
     setActiveRole(newRole);
@@ -95,149 +118,62 @@ export default function App() {
     ? groups
     : groups.filter(g => g.district === selectedDistrict);
 
-  // Quick Attendance Save & Auto Recalculate Traffic Light
-  const handleSaveAttendance = (
+  // Guardar asistencia en la base de datos (el semáforo se recalcula en MySQL)
+  const handleSaveAttendance = async (
     groupId: string, 
     date: string, 
     attendanceMap: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>
   ) => {
-    setPeople(prev => prev.map(person => {
-      if (person.groupId !== groupId) return person;
-
-      const statusInSession = attendanceMap[person.id];
-      if (!statusInSession) return person;
-
-      let newAbsences = person.consecutiveAbsences;
-      let newStatus = person.status;
-
-      if (statusInSession === 'presente') {
-        newAbsences = 0;
-        newStatus = 'green';
-      } else if (statusInSession === 'falta_injustificada') {
-        newAbsences += 1;
-        if (newAbsences >= 3) {
-          newStatus = 'red';
-        } else if (newAbsences === 2) {
-          newStatus = 'yellow';
-        }
-      }
-
-      return {
-        ...person,
-        consecutiveAbsences: newAbsences,
-        lastAttendanceDate: statusInSession === 'presente' ? date : person.lastAttendanceDate,
-        status: newStatus
-      };
-    }));
-
-    // Register Audit Log
-    const newLog: AuditLog = {
-      id: `aud-${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      userName: 'Ing. Juan Diego',
-      userRole: activeRole,
-      action: 'REGISTRO_ASISTENCIA',
-      entity: 'Asistencias',
-      details: `Guardó asistencia para el grupo ${groupId} fecha ${date}.`,
-      ipAddress: '190.237.45.12'
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
-
-    showToast('Asistencia guardada y semáforo de riesgo recalculado automáticamente.');
+    try {
+      await api.registrarAsistencia(groupId, date, attendanceMap);
+      await loadData();
+      showToast('Asistencia guardada y semáforo de riesgo recalculado automáticamente.');
+    } catch (err) {
+      showToast(`No se pudo guardar la asistencia: ${(err as Error).message}`, 'error');
+    }
   };
 
-  // Add new person
-  const handleAddPerson = (newPersonData: Omit<Person, 'id' | 'code' | 'status' | 'consecutiveAbsences' | 'daysSinceLastContact'>) => {
-    const nextId = `per-${Date.now()}`;
-    const nextCode = `MIS-2026-${String(people.length + 1).padStart(3, '0')}`;
-
-    const newPerson: Person = {
-      ...newPersonData,
-      id: nextId,
-      code: nextCode,
-      status: 'green',
-      consecutiveAbsences: 0,
-      daysSinceLastContact: 0
-    };
-
-    setPeople(prev => [newPerson, ...prev]);
-
-    // Update group member count
-    setGroups(prev => prev.map(g => {
-      if (g.id === newPerson.groupId) {
-        return { ...g, memberCount: g.memberCount + 1 };
-      }
-      return g;
-    }));
-
-    const newLog: AuditLog = {
-      id: `aud-${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      userName: 'Ing. Juan Diego',
-      userRole: activeRole,
-      action: 'ALTA_MIEMBRO',
-      entity: 'Personas',
-      details: `Incorporó a ${newPerson.fullName} al grupo ${newPerson.groupName}.`,
-      ipAddress: '190.237.45.12'
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
-
-    showToast(`Miembro "${newPerson.fullName}" registrado exitosamente con código ${nextCode}.`);
+  // Registrar nueva persona
+  const handleAddPerson = async (newPersonData: Omit<Person, 'id' | 'code' | 'status' | 'consecutiveAbsences' | 'daysSinceLastContact'>) => {
+    try {
+      const created = await api.crearPersona(newPersonData);
+      await loadData();
+      showToast(`Miembro "${created.fullName}" registrado exitosamente con código ${created.code}.`);
+    } catch (err) {
+      showToast(`No se pudo registrar la persona: ${(err as Error).message}`, 'error');
+    }
   };
 
-  // Follow-up save
-  const handleSaveFollowUp = (followUpData: Omit<FollowUpRecord, 'id'>, resultingStatus: TrafficLightStatus) => {
-    const newRecord: FollowUpRecord = {
-      ...followUpData,
-      id: `fol-${Date.now()}`
-    };
-
-    setFollowUps(prev => [newRecord, ...prev]);
-
-    // Update person status & days since contact
-    setPeople(prev => prev.map(p => {
-      if (p.id === followUpData.personId) {
-        return {
-          ...p,
-          status: resultingStatus,
-          lastFollowUpDate: followUpData.date,
-          daysSinceLastContact: 0,
-          consecutiveAbsences: resultingStatus === 'green' ? 0 : p.consecutiveAbsences
-        };
-      }
-      return p;
-    }));
-
-    // Register Audit Log
-    const newLog: AuditLog = {
-      id: `aud-${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      userName: 'Ing. Juan Diego',
-      userRole: activeRole,
-      action: 'REGISTRO_SEGUIMIENTO',
-      entity: 'Seguimientos Pastorales',
-      details: `Atención pastoral para ${followUpData.personName} (${followUpData.channel}). Nuevo estado: ${resultingStatus.toUpperCase()}.`,
-      ipAddress: '190.237.45.12'
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
-
-    showToast(`Seguimiento pastoral registrado para ${followUpData.personName}. Semáforo actualizado.`);
+  // Guardar seguimiento pastoral
+  const handleSaveFollowUp = async (followUpData: Omit<FollowUpRecord, 'id'>, resultingStatus: TrafficLightStatus) => {
+    try {
+      await api.registrarSeguimiento({ ...followUpData, resultingStatus });
+      await loadData();
+      showToast(`Seguimiento pastoral registrado para ${followUpData.personName}. Semáforo actualizado.`);
+    } catch (err) {
+      showToast(`No se pudo guardar el seguimiento: ${(err as Error).message}`, 'error');
+    }
   };
 
-  // Promote person phase
-  const handlePromotePerson = (personId: string, nextPhase: DiscipleshipPhase) => {
-    setPeople(prev => prev.map(p => {
-      if (p.id === personId) {
-        return {
-          ...p,
-          phase: nextPhase
-        };
-      }
-      return p;
-    }));
-
+  // Promover de fase (el trigger de MySQL guarda el historial de discipulado)
+  const handlePromotePerson = async (personId: string, nextPhase: DiscipleshipPhase) => {
     const targetPerson = people.find(p => p.id === personId);
-    showToast(`¡${targetPerson?.fullName || 'Miembro'} fue promovido a la fase: ${nextPhase.toUpperCase()}!`, 'success');
+    try {
+      await api.cambiarFase(personId, nextPhase);
+      await loadData();
+      showToast(`¡${targetPerson?.fullName || 'Miembro'} fue promovido a la fase: ${nextPhase.toUpperCase()}!`, 'success');
+    } catch (err) {
+      showToast(`No se pudo cambiar la fase: ${(err as Error).message}`, 'error');
+    }
+  };
+
+  const handleMarkNotificationAsRead = async (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    try {
+      await api.marcarAlertaLeida(id);
+    } catch {
+      /* si falla, se volverá a mostrar como no leída en la próxima carga */
+    }
   };
 
   const handleOpenFollowUp = (personId?: string) => {
@@ -250,6 +186,27 @@ export default function App() {
   };
 
   const criticalCount = people.filter(p => p.status === 'red').length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF7F2] text-[#5C4535] text-sm">
+        Cargando información de MISIONTEC…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF7F2] p-6">
+        <div className="max-w-md bg-white border border-[#E8DFD7] rounded-xl p-6 text-sm text-[#2D1F17] space-y-3">
+          <h2 className="font-bold text-base">No se pudo conectar con la base de datos</h2>
+          <p className="text-[#7D6B5E]">{loadError}</p>
+          <p className="text-[#7D6B5E]">Verifica que MySQL esté encendido, que el archivo .env tenga la contraseña correcta y que la API esté corriendo (npm run dev).</p>
+          <button onClick={() => { setLoading(true); loadData(); }} className="px-4 py-2 bg-[#3B281C] text-white rounded-lg text-xs">Reintentar</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-[#FAF7F2] text-[#2D1F17] font-sans antialiased overflow-hidden">
@@ -270,7 +227,7 @@ export default function App() {
           searchQuery={globalSearch}
           onSearchChange={setGlobalSearch}
           notifications={notifications}
-          onMarkNotificationAsRead={(id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))}
+          onMarkNotificationAsRead={handleMarkNotificationAsRead}
           onSelectPersonFromSearch={(personId) => {
             const found = people.find(p => p.id === personId);
             if (found) setSelectedPersonForDetail(found);
@@ -282,6 +239,7 @@ export default function App() {
           onOpenNewPersonModal={() => setIsNewPersonModalOpen(true)}
           onOpenFollowUpModal={handleOpenFollowUp}
           selectedDistrict={selectedDistrict}
+          districts={districts}
           onDistrictChange={setSelectedDistrict}
         />
 

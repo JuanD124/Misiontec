@@ -114,7 +114,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   Patrón Arquitectónico: Plataforma Integral de Acompañamiento
                 </h3>
                 <p className="text-[#5C4535] leading-relaxed">
-                  MISIONTEC implementa una estructura desacoplada que armoniza el registro fraterno, la georreferenciación de células en hogares de Lima, el cálculo preventivo del semáforo de deserción y el seguimiento pastoral personalizado.
+                  MISIONTEC implementa una estructura desacoplada que armoniza el registro fraterno, la georreferenciación de células en hogares de Villavicencio, el cálculo preventivo del semáforo de deserción y el seguimiento pastoral personalizado.
                 </p>
               </div>
 
@@ -152,7 +152,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   </div>
                   <ul className="space-y-1 text-[#7D6B5E] text-[11px]">
                     <li>• Padrón unificado de miembros</li>
-                    <li>• Coordenadas distritales de Lima</li>
+                    <li>• Coordenadas de los grupos en Villavicencio</li>
                     <li>• Trazabilidad y auditoría de cambios</li>
                     <li>• Agrupación celular por zonas</li>
                   </ul>
