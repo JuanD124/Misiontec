@@ -63,7 +63,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id="main-sidebar"
       className="w-68 bg-[#2A1D15] text-[#FAF7F2] flex flex-col h-screen border-r border-[#3E2B20] shrink-0 select-none z-30 transition-all"
     >
-      {/* Brand & Identity with Religious / Pastoral touch */}
       <div className="p-5 border-b border-[#3E2B20]">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-[#3D2B1F] border border-[#5A4030] flex items-center justify-center text-[#D6A86C] shadow-xs">
@@ -78,7 +77,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Role Selector (Simpler, Clean Coffee Tone) */}
       <div className="px-4 py-3 bg-[#231710] border-b border-[#3E2B20]">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[10px] font-medium uppercase tracking-widest text-[#B39F90] flex items-center gap-1.5">
@@ -103,7 +101,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </select>
       </div>
 
-      {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#A89383]">
           Misterios & Módulos
@@ -141,7 +138,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
 
-        {/* Academic / Technical sheet button */}
         <div className="pt-4 mt-3 border-t border-[#3E2B20]">
           <button
             id="btn-open-sys-architecture"
@@ -157,7 +153,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Devotional verse / User footer */}
       <div className="p-3 border-t border-[#3E2B20] bg-[#231710]">
         <div className="mb-2.5 px-2 py-1.5 rounded bg-[#2D1E16] border border-[#422C20]">
           <p className="text-[10px] italic text-[#C7B6A7] leading-tight text-center">

@@ -1,7 +1,3 @@
-// Traduce los nombres y valores de la base de datos (en español) a los
-// tipos que ya usa el front en src/types/index.ts, para no tener que
-// modificar los componentes.
-
 export const FASE_POR_ORDEN: Record<number, string> = {
   1: 'contacto',
   2: 'consolidacion',
@@ -57,7 +53,6 @@ export function haceCuanto(fecha: string): string {
   return dias === 1 ? 'Hace 1 día' : `Hace ${dias} días`;
 }
 
-/** Separa "Laura Valentina Rojas Peña" en nombres y apellidos. */
 export function separarNombre(fullName: string): { nombres: string; apellidos: string } {
   const partes = fullName.trim().split(/\s+/);
   if (partes.length === 1) return { nombres: partes[0], apellidos: '' };

@@ -66,7 +66,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D1F17]/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white border border-[#E8DFD7] rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
         <div className="p-5 border-b border-[#E8DFD7] flex items-center justify-between bg-[#FAF7F2]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#E8DFD7] text-[#3B281C] flex items-center justify-center">
@@ -89,10 +88,8 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Full Name */}
             <div>
               <label className="block font-medium text-[#2D1F17] mb-1">
                 Nombres y Apellidos Completos *
@@ -107,7 +104,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               />
             </div>
 
-            {/* DNI */}
             <div>
               <label className="block font-medium text-[#2D1F17] mb-1">
                 Documento de Identidad (DNI) *
@@ -123,7 +119,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               />
             </div>
 
-            {/* Phone */}
             <div>
               <label className="block font-medium text-[#2D1F17] mb-1">
                 Teléfono / WhatsApp
@@ -136,7 +131,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               />
             </div>
 
-            {/* Email */}
             <div>
               <label className="block font-medium text-[#2D1F17] mb-1">
                 Correo Electrónico
@@ -150,7 +144,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               />
             </div>
 
-            {/* Age & Gender */}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block font-medium text-[#2D1F17] mb-1">
@@ -180,7 +173,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               </div>
             </div>
 
-            {/* District */}
             <div>
               <label className="block font-medium text-[#2D1F17] mb-1">
                 Distrito de Residencia
@@ -194,7 +186,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
             </div>
           </div>
 
-          {/* Address */}
           <div>
             <label className="block font-medium text-[#2D1F17] mb-1">
               Dirección de Domicilio
@@ -208,7 +199,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
             />
           </div>
 
-          {/* Missionary Assignment Section */}
           <div className="pt-2 border-t border-[#E8DFD7]">
             <h3 className="font-serif font-bold text-[#2D1F17] mb-2 flex items-center gap-1.5">
               <Church className="w-4 h-4 text-[#8C5D36]" />
@@ -216,7 +206,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {/* Group */}
               <div>
                 <label className="block font-medium text-[#2D1F17] mb-1">
                   Célula en Hogar
@@ -236,7 +225,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
                 </select>
               </div>
 
-              {/* Initial Phase */}
               <div>
                 <label className="block font-medium text-[#2D1F17] mb-1">
                   Etapa de Formación
@@ -253,7 +241,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
                 </select>
               </div>
 
-              {/* Mentor */}
               <div>
                 <label className="block font-medium text-[#2D1F17] mb-1">
                   Mentor / Discipulador
@@ -268,7 +255,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
             </div>
           </div>
 
-          {/* Notes */}
           <div>
             <label className="block font-medium text-[#2D1F17] mb-1">
               Petición de Oración / Observación Pastoral
@@ -282,7 +268,6 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
             />
           </div>
 
-          {/* Footer Buttons */}
           <div className="pt-4 border-t border-[#E8DFD7] flex items-center justify-end gap-3">
             <button
               type="button"

@@ -32,8 +32,6 @@ import { ReportsView } from './components/views/ReportsView';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 export default function App() {
-  // Master state
-  // Master state (se llena desde la base de datos MySQL a través de la API)
   const [people, setPeople] = useState<Person[]>([]);
   const [groups, setGroups] = useState<MissionaryGroup[]>([]);
   const [followUps, setFollowUps] = useState<FollowUpRecord[]>([]);
@@ -43,7 +41,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // UI state
   const [currentView, setCurrentView] = useState<string>('dashboard');
   const [activeRole, setActiveRole] = useState<UserRole>('admin');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
@@ -52,14 +49,12 @@ export default function App() {
   const [dashboardStatusFilter, setDashboardStatusFilter] = useState<'all' | TrafficLightStatus>('all');
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
-  // Modals state
   const [isNewPersonModalOpen, setIsNewPersonModalOpen] = useState(false);
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [followUpPersonId, setFollowUpPersonId] = useState<string | undefined>(undefined);
   const [selectedPersonForDetail, setSelectedPersonForDetail] = useState<Person | null>(null);
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState(false);
 
-  // Sync dark mode class with root html
   useEffect(() => {
     const root = document.documentElement;
     if (darkMode) {
@@ -74,9 +69,6 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Carga (o recarga) todos los datos desde MySQL. Después de cada cambio se
-  // vuelve a llamar para que el semáforo, las alertas y los indicadores
-  // salgan de las vistas de la base de datos y no de cálculos en el navegador.
   const loadData = async () => {
     try {
       const data = await api.cargarTodo();
@@ -100,13 +92,11 @@ export default function App() {
 
   const districts = Array.from(new Set(groups.map(g => g.district))).sort();
 
-  // RBAC Role Change Handler
   const handleRoleChange = (newRole: UserRole) => {
     setActiveRole(newRole);
     showToast(`Rol cambiado a: ${newRole.toUpperCase()} para demostración de permisos RBAC.`, 'info');
   };
 
-  // Filtered dataset by selected district
   const filteredPeople = selectedDistrict === 'all' 
     ? people 
     : people.filter(p => {
@@ -118,7 +108,6 @@ export default function App() {
     ? groups
     : groups.filter(g => g.district === selectedDistrict);
 
-  // Guardar asistencia en la base de datos (el semáforo se recalcula en MySQL)
   const handleSaveAttendance = async (
     groupId: string, 
     date: string, 
@@ -133,7 +122,6 @@ export default function App() {
     }
   };
 
-  // Registrar nueva persona
   const handleAddPerson = async (newPersonData: Omit<Person, 'id' | 'code' | 'status' | 'consecutiveAbsences' | 'daysSinceLastContact'>) => {
     try {
       const created = await api.crearPersona(newPersonData);
@@ -144,7 +132,6 @@ export default function App() {
     }
   };
 
-  // Guardar seguimiento pastoral
   const handleSaveFollowUp = async (followUpData: Omit<FollowUpRecord, 'id'>, resultingStatus: TrafficLightStatus) => {
     try {
       await api.registrarSeguimiento({ ...followUpData, resultingStatus });
@@ -155,7 +142,6 @@ export default function App() {
     }
   };
 
-  // Promover de fase (el trigger de MySQL guarda el historial de discipulado)
   const handlePromotePerson = async (personId: string, nextPhase: DiscipleshipPhase) => {
     const targetPerson = people.find(p => p.id === personId);
     try {
@@ -172,7 +158,6 @@ export default function App() {
     try {
       await api.marcarAlertaLeida(id);
     } catch {
-      /* si falla, se volverá a mostrar como no leída en la próxima carga */
     }
   };
 
@@ -210,7 +195,6 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[#FAF7F2] text-[#2D1F17] font-sans antialiased overflow-hidden">
-      {/* 1. Lateral Sidebar with RBAC selector */}
       <Sidebar
         currentView={currentView}
         onSelectView={(view) => setCurrentView(view)}
@@ -220,9 +204,7 @@ export default function App() {
         onOpenArchitectureModal={() => setIsArchitectureModalOpen(true)}
       />
 
-      {/* Main App Canvas */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* 2. Top Header with global search, notifications, sync */}
         <Header
           searchQuery={globalSearch}
           onSearchChange={setGlobalSearch}
@@ -243,12 +225,9 @@ export default function App() {
           onDistrictChange={setSelectedDistrict}
         />
 
-        {/* 3. Main Dynamic Content View */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 custom-scrollbar">
-          {/* Default VIEW: DASHBOARD */}
           {currentView === 'dashboard' && (
             <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-150">
-              {/* Pastoral Welcome & Context Banner */}
               <div className="p-4.5 bg-white border border-[#E8DFD7] rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h1 className="text-lg font-serif font-bold text-[#2D1F17] tracking-tight">
@@ -269,7 +248,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 1. Tarjetas KPI (Stats Cards) */}
               <StatsCards
                 people={filteredPeople}
                 groups={filteredGroups}
@@ -280,7 +258,6 @@ export default function App() {
                 }}
               />
 
-              {/* 2. Semáforo de Acompañamiento y Alertas (Core Module) */}
               <div id="dashboard-traffic-light-section">
                 <TrafficLightTable
                   people={filteredPeople}
@@ -291,7 +268,6 @@ export default function App() {
                 />
               </div>
 
-              {/* 3. Mapa de Geolocalización de Grupos Misioneros */}
               <div>
                 <InteractiveMap
                   groups={filteredGroups}
@@ -303,7 +279,6 @@ export default function App() {
                 />
               </div>
 
-              {/* 4. Gráfico de Embudo / Fases de Discipulado */}
               <div>
                 <DiscipleshipFunnel
                   people={filteredPeople}
@@ -312,7 +287,6 @@ export default function App() {
                 />
               </div>
 
-              {/* 5. Módulo de Asistencia Rápida */}
               <div id="dashboard-attendance-section">
                 <QuickAttendance
                   groups={filteredGroups}
@@ -323,7 +297,6 @@ export default function App() {
             </div>
           )}
 
-          {/* VIEW: PERSONAS */}
           {currentView === 'personas' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <PeopleView
@@ -336,7 +309,6 @@ export default function App() {
             </div>
           )}
 
-          {/* VIEW: GRUPOS & GEOLOCALIZACION */}
           {currentView === 'grupos' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <GroupsView
@@ -349,7 +321,6 @@ export default function App() {
             </div>
           )}
 
-          {/* VIEW: DISCIPULADO */}
           {currentView === 'discipulado' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <DiscipleshipView
@@ -360,7 +331,6 @@ export default function App() {
             </div>
           )}
 
-          {/* VIEW: ASISTENCIA */}
           {currentView === 'asistencia' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <AttendanceView
@@ -371,7 +341,6 @@ export default function App() {
             </div>
           )}
 
-          {/* VIEW: ALERTAS & SEMÁFORO */}
           {currentView === 'alertas' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <AlertsView
@@ -383,14 +352,12 @@ export default function App() {
             </div>
           )}
 
-          {/* VIEW: EVENTOS */}
           {currentView === 'eventos' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <EventsView events={events} />
             </div>
           )}
 
-          {/* VIEW: REPORTES & AUDITORÍA */}
           {currentView === 'reportes' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <ReportsView
@@ -403,7 +370,6 @@ export default function App() {
         </main>
       </div>
 
-      {/* Floating Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#2D1F17] text-[#FAF7F2] shadow-xl border border-[#6B4E3D] text-xs font-medium animate-in fade-in slide-in-from-bottom-3 duration-200">
           {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-[#8CBF84] shrink-0" />}
@@ -419,7 +385,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 1: Registrar Nueva Persona */}
       <NewPersonModal
         isOpen={isNewPersonModalOpen}
         onClose={() => setIsNewPersonModalOpen(false)}
@@ -427,7 +392,6 @@ export default function App() {
         onAddPerson={handleAddPerson}
       />
 
-      {/* MODAL 2: Registrar Seguimiento Pastoral */}
       <FollowUpModal
         isOpen={isFollowUpModalOpen}
         onClose={() => {
@@ -439,7 +403,6 @@ export default function App() {
         onSaveFollowUp={handleSaveFollowUp}
       />
 
-      {/* MODAL 3: Ficha Detallada de Persona */}
       <PersonDetailModal
         person={selectedPersonForDetail}
         onClose={() => setSelectedPersonForDetail(null)}
@@ -451,7 +414,6 @@ export default function App() {
         onPromotePhase={handlePromotePerson}
       />
 
-      {/* MODAL 4: Ficha Técnica & Arquitectura de Software para Sustentación */}
       <SystemArchitectureModal
         isOpen={isArchitectureModalOpen}
         onClose={() => setIsArchitectureModalOpen(false)}

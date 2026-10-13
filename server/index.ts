@@ -15,21 +15,15 @@ import {
 const app = express();
 app.use(express.json());
 
-// Mientras no exista pantalla de login, el front envía el id del usuario
-// en la cabecera "x-usuario-id" (por defecto 1 = administrador).
 function usuarioActual(req: Request): number {
   return Number(req.header('x-usuario-id') || 1);
 }
 
-// Envuelve las rutas async para que los errores lleguen al manejador final
 const ruta =
   (fn: (req: Request, res: Response) => Promise<unknown>) =>
   (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
 
-// ---------------------------------------------------------------------
-// Consultas de lectura
-// ---------------------------------------------------------------------
 async function obtenerPersonas() {
   const [rows]: any = await pool.query(`
     SELECT p.id_persona, p.codigo, p.nombres, p.apellidos, p.numero_documento, p.telefono, p.correo,
@@ -206,17 +200,12 @@ async function obtenerAuditoria() {
   }));
 }
 
-// ---------------------------------------------------------------------
-// Rutas
-// ---------------------------------------------------------------------
 
-// Estado de la conexión (útil para probar que la API ve la base)
 app.get('/api/salud', ruta(async (_req, res) => {
   const [rows]: any = await pool.query('SELECT DATABASE() AS base, NOW() AS hora');
   res.json({ ok: true, ...rows[0] });
 }));
 
-// Carga todo lo que necesita la aplicación al iniciar
 app.get('/api/inicio', ruta(async (_req, res) => {
   const [people, groups, followUps, notifications, events, auditLogs] = await Promise.all([
     obtenerPersonas(), obtenerGrupos(), obtenerSeguimientos(),
@@ -233,14 +222,12 @@ app.get('/api/dashboard', ruta(async (_req, res) => {
 app.get('/api/personas', ruta(async (_req, res) => res.json(await obtenerPersonas())));
 app.get('/api/grupos', ruta(async (_req, res) => res.json(await obtenerGrupos())));
 
-// Geolocalización: /api/grupos/cercanos?lat=4.142&lng=-73.626&radio=5
 app.get('/api/grupos/cercanos', ruta(async (req, res) => {
   const { lat, lng, radio = '5' } = req.query as Record<string, string>;
   const [result]: any = await pool.query('CALL sp_grupos_cercanos(?, ?, ?)', [lat, lng, radio]);
   res.json(result[0]);
 }));
 
-// Registrar persona
 app.post('/api/personas', ruta(async (req, res) => {
   const b = req.body;
   const { nombres, apellidos } = separarNombre(b.fullName);
@@ -249,7 +236,6 @@ app.post('/api/personas', ruta(async (req, res) => {
   const id = await withUser(usuarioActual(req), async (conn) => {
     await conn.beginTransaction();
     try {
-      // El mentor por defecto es el líder del grupo elegido
       const [g]: any = await conn.query('SELECT id_lider FROM grupo WHERE id_grupo = ?', [b.groupId || null]);
       const [[{ siguiente }]]: any = await conn.query(
         "SELECT CONCAT('MT-', LPAD(IFNULL(MAX(id_persona), 0) + 1, 4, '0')) AS siguiente FROM persona");
@@ -264,7 +250,6 @@ app.post('/api/personas', ruta(async (req, res) => {
          b.gender || null, b.phone || null, b.email || null, b.address || null,
          b.groupId || null, g[0]?.id_lider ?? null, ORDEN_POR_FASE[b.phase] ?? 1, b.criticalNotes || null]);
 
-      // Etiquetas: se crean si no existen
       for (const tag of b.tags ?? []) {
         await conn.query('INSERT IGNORE INTO etiqueta (nombre) VALUES (?)', [tag]);
         await conn.query(
@@ -283,7 +268,6 @@ app.post('/api/personas', ruta(async (req, res) => {
   res.status(201).json(persona);
 }));
 
-// Cambio de fase de discipulado (el trigger guarda el historial)
 app.patch('/api/personas/:id/fase', ruta(async (req, res) => {
   await withUser(usuarioActual(req), (conn) => conn.query(
     'UPDATE persona SET id_fase = (SELECT id_fase FROM fase_discipulado WHERE orden = ?) WHERE id_persona = ?',
@@ -291,14 +275,12 @@ app.patch('/api/personas/:id/fase', ruta(async (req, res) => {
   res.json({ ok: true });
 }));
 
-// Desactivación lógica
 app.delete('/api/personas/:id', ruta(async (req, res) => {
   await pool.query('CALL sp_desactivar_persona(?, ?, ?)',
     [req.params.id, usuarioActual(req), req.body?.motivo ?? 'Desactivado desde la aplicación']);
   res.json({ ok: true });
 }));
 
-// Registrar seguimiento pastoral
 app.post('/api/seguimientos', ruta(async (req, res) => {
   const b = req.body;
   await pool.query(
@@ -307,22 +289,18 @@ app.post('/api/seguimientos', ruta(async (req, res) => {
      VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?)`,
     [b.personId, usuarioActual(req), b.channel, b.pastoralStatus, b.notes, b.commitments,
      b.nextContactDate || null, SEMAFORO_INVERSO[b.resultingStatus] ?? 'verde']);
-  // Si se atendió a la persona, se resuelven sus alertas de falta de seguimiento
   await pool.query(
     "UPDATE alerta SET resuelta = 1, fecha_resolucion = NOW() WHERE id_persona = ? AND tipo = 'sin_seguimiento' AND resuelta = 0",
     [b.personId]);
   res.status(201).json({ ok: true });
 }));
 
-// Registrar asistencia de un grupo
-// body: { groupId, date, items: { [personId]: 'presente' | 'falta_justificada' | 'falta_injustificada' } }
 app.post('/api/asistencias', ruta(async (req, res) => {
   const { groupId, date, topic, items } = req.body;
   const usuario = usuarioActual(req);
   await withUser(usuario, async (conn) => {
     await conn.beginTransaction();
     try {
-      // Si ya existe la sesión de ese día se actualiza en lugar de duplicarla
       await conn.query(
         `INSERT INTO sesion_asistencia (id_grupo, fecha, tema, id_usuario) VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE tema = VALUES(tema), id_usuario = VALUES(id_usuario)`,
@@ -345,24 +323,20 @@ app.post('/api/asistencias', ruta(async (req, res) => {
       throw e;
     }
   });
-  // Recalcular alertas con la nueva asistencia
   await pool.query('CALL sp_generar_alertas()');
   res.status(201).json({ ok: true });
 }));
 
-// Marcar alerta como leída
 app.patch('/api/alertas/:id/leida', ruta(async (req, res) => {
   await pool.query('UPDATE alerta SET leida = 1 WHERE id_alerta = ?', [req.params.id]);
   res.json({ ok: true });
 }));
 
-// Regenerar alertas manualmente
 app.post('/api/alertas/generar', ruta(async (_req, res) => {
   await pool.query('CALL sp_generar_alertas()');
   res.json({ ok: true });
 }));
 
-// Manejador de errores: traduce los errores más comunes de MySQL
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   if (err.code === 'ER_DUP_ENTRY') {

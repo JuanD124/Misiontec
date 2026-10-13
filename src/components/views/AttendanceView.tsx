@@ -24,7 +24,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      {/* Title Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8DFD7] shadow-xs">
         <div>
           <h1 className="text-lg font-serif font-bold text-[#2D1F17] flex items-center gap-2">
@@ -43,14 +42,12 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         </div>
       </div>
 
-      {/* Main interactive attendance component */}
       <QuickAttendance
         groups={groups}
         people={people}
         onSaveAttendance={onSaveAttendance}
       />
 
-      {/* Group Attendance Performance Comparison */}
       <div className="bg-white p-4.5 rounded-xl border border-[#E8DFD7] shadow-xs">
         <h2 className="text-sm font-serif font-bold text-[#2D1F17] mb-3 flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-[#8C5D36]" />

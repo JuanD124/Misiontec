@@ -26,7 +26,6 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D1F17]/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white border border-[#E8DFD7] rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
         <div className="p-5 border-b border-[#E8DFD7] bg-[#FAF7F2] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#3B281C] text-[#FAF7F2] flex items-center justify-center shadow-xs">
@@ -54,7 +53,6 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
           </button>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex items-center gap-2 px-6 pt-3 bg-white border-b border-[#E8DFD7] text-xs">
           <button
             onClick={() => setActiveTab('architecture')}
@@ -105,7 +103,6 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
           </button>
         </div>
 
-        {/* Tab Content */}
         <div className="p-6 overflow-y-auto space-y-4 text-xs custom-scrollbar">
           {activeTab === 'architecture' && (
             <div className="space-y-4">
@@ -289,7 +286,6 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
           )}
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t border-[#E8DFD7] flex items-center justify-end bg-[#FAF7F2]">
           <button
             onClick={onClose}

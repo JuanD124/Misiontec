@@ -27,7 +27,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Title Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8DFD7] shadow-xs">
         <div>
           <h1 className="text-lg font-serif font-bold text-[#2D1F17] flex items-center gap-2">
@@ -50,7 +49,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         </div>
       </div>
 
-      {/* Reports Selector & Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div 
           onClick={() => setReportType('executive')}
@@ -98,7 +96,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         </div>
       </div>
 
-      {/* Audit Log Table */}
       <div className="bg-white rounded-xl border border-[#E8DFD7] shadow-xs overflow-hidden">
         <div className="p-4.5 border-b border-[#E8DFD7] flex items-center justify-between">
           <div className="flex items-center gap-2">

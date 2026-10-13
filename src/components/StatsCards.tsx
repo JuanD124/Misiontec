@@ -16,17 +16,14 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
   const totalPeople = people.length;
   const activeGroups = groups.filter(g => g.status === 'active').length;
   
-  // Average attendance rate across groups
   const averageAttendance = (
     groups.reduce((acc, curr) => acc + curr.averageAttendanceRate, 0) / groups.length
   ).toFixed(1);
 
-  // Critical alerts count (status === 'red')
   const criticalCount = people.filter(p => p.status === 'red').length;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* KPI 1: Total Rebaño */}
       <div 
         id="kpi-card-personas"
         onClick={() => onFilterByStatus && onFilterByStatus('all')}
@@ -49,7 +46,6 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         </p>
       </div>
 
-      {/* KPI 2: Células en Hogares */}
       <div 
         id="kpi-card-grupos"
         className="bg-white border border-[#E8DFD7] rounded-xl p-4.5 shadow-xs hover:border-[#B8A18E] transition-all group"
@@ -71,7 +67,6 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         </p>
       </div>
 
-      {/* KPI 3: Asistencia y Comunión */}
       <div 
         id="kpi-card-asistencia"
         className="bg-white border border-[#E8DFD7] rounded-xl p-4.5 shadow-xs hover:border-[#B8A18E] transition-all group"
@@ -96,7 +91,6 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         </div>
       </div>
 
-      {/* KPI 4: Acompañamiento / Cuidado Pastoral */}
       <div 
         id="kpi-card-alertas"
         onClick={() => onFilterByStatus && onFilterByStatus('red')}

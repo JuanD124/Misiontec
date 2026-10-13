@@ -1,26 +1,3 @@
--- =====================================================================
---  MISIONTEC - Sistema Integral de Gestión y Seguimiento Misionero
---  Script de creación de la base de datos (MySQL 8.0 / MySQL Workbench)
---  Universidad Cooperativa de Colombia - Gestión de la Información
---
---  Contenido:
---    1. Creación de la base de datos
---    2. Tablas (estructura organizacional, personas, roles y permisos,
---       grupos, discipulado, asistencia, seguimiento, eventos, alertas,
---       auditoría)
---    3. Índices de búsqueda
---    4. Función de geolocalización y procedimientos
---    5. Vistas de indicadores (semáforo, asistencia, dashboard)
---    6. Disparadores (historial de discipulado y auditoría)
---    7. Datos de ejemplo para pruebas
---
---  Convenciones:
---    - Eliminación lógica: columna `activo` (1 = activo, 0 = desactivado),
---      para conservar el historial como pide el documento del proyecto.
---    - Datos personales: se registra la autorización de tratamiento de
---      datos (Ley 1581 de 2012 y Decreto 1377 de 2013).
--- =====================================================================
-
 SET NAMES utf8mb4 COLLATE utf8mb4_spanish_ci;
 DROP DATABASE IF EXISTS misiontec;
 CREATE DATABASE misiontec
@@ -28,13 +5,6 @@ CREATE DATABASE misiontec
   COLLATE utf8mb4_spanish_ci;
 USE misiontec;
 
--- =====================================================================
--- 2. TABLAS
--- =====================================================================
-
--- ---------------------------------------------------------------------
--- 2.1 Estructura territorial
--- ---------------------------------------------------------------------
 CREATE TABLE distrito (
   id_distrito     INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre          VARCHAR(100) NOT NULL,
@@ -53,9 +23,6 @@ CREATE TABLE zona (
     REFERENCES distrito (id_distrito) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB COMMENT='Zonas territoriales de cada distrito';
 
--- ---------------------------------------------------------------------
--- 2.2 Fases de discipulado (catálogo)
--- ---------------------------------------------------------------------
 CREATE TABLE fase_discipulado (
   id_fase         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre          VARCHAR(50)  NOT NULL,
@@ -66,9 +33,6 @@ CREATE TABLE fase_discipulado (
   CONSTRAINT uq_fase_orden  UNIQUE (orden)
 ) ENGINE=InnoDB COMMENT='Etapas del proceso de discipulado';
 
--- ---------------------------------------------------------------------
--- 2.3 Roles y permisos
--- ---------------------------------------------------------------------
 CREATE TABLE rol (
   id_rol          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre          VARCHAR(50)  NOT NULL,
@@ -96,12 +60,6 @@ CREATE TABLE rol_permiso (
     REFERENCES permiso (id_permiso) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB COMMENT='Relación N:M entre roles y permisos';
 
--- ---------------------------------------------------------------------
--- 2.4 Personas y grupos
---   persona y grupo se referencian mutuamente (la persona pertenece a un
---   grupo y el grupo tiene un líder que es una persona), por eso las
---   llaves foráneas circulares se agregan con ALTER TABLE al final.
--- ---------------------------------------------------------------------
 CREATE TABLE persona (
   id_persona          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   codigo              VARCHAR(20)  NOT NULL,
@@ -166,8 +124,6 @@ ALTER TABLE persona
   ADD CONSTRAINT fk_persona_grupo FOREIGN KEY (id_grupo)
     REFERENCES grupo (id_grupo) ON UPDATE CASCADE ON DELETE SET NULL;
 
--- Roles que ejerce cada persona (una persona puede tener varios roles
--- y se conserva el historial de asignaciones)
 CREATE TABLE persona_rol (
   id_persona_rol  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_persona      INT UNSIGNED NOT NULL,
@@ -183,7 +139,6 @@ CREATE TABLE persona_rol (
     REFERENCES rol (id_rol) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB COMMENT='Asignación histórica de roles a personas (N:M)';
 
--- Etiquetas libres para filtrar personas (ej. "Nuevo creyente")
 CREATE TABLE etiqueta (
   id_etiqueta     INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre          VARCHAR(50) NOT NULL,
@@ -200,9 +155,6 @@ CREATE TABLE persona_etiqueta (
     REFERENCES etiqueta (id_etiqueta) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB COMMENT='Relación N:M entre personas y etiquetas';
 
--- ---------------------------------------------------------------------
--- 2.5 Usuarios del sistema (acceso controlado)
--- ---------------------------------------------------------------------
 CREATE TABLE usuario (
   id_usuario      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_persona      INT UNSIGNED NOT NULL,
@@ -220,9 +172,6 @@ CREATE TABLE usuario (
     REFERENCES rol (id_rol) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB COMMENT='Cuentas de acceso al sistema (relación 1:1 con persona)';
 
--- ---------------------------------------------------------------------
--- 2.6 Historial de discipulado
--- ---------------------------------------------------------------------
 CREATE TABLE historial_discipulado (
   id_historial    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_persona      INT UNSIGNED NOT NULL,
@@ -240,9 +189,6 @@ CREATE TABLE historial_discipulado (
     REFERENCES usuario (id_usuario) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Registro histórico del avance en las fases';
 
--- ---------------------------------------------------------------------
--- 2.7 Asistencia
--- ---------------------------------------------------------------------
 CREATE TABLE sesion_asistencia (
   id_sesion       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_grupo        INT UNSIGNED NOT NULL,
@@ -269,9 +215,6 @@ CREATE TABLE detalle_asistencia (
     REFERENCES persona (id_persona) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB COMMENT='Asistencia de cada persona a una sesión';
 
--- ---------------------------------------------------------------------
--- 2.8 Seguimiento y acompañamiento
--- ---------------------------------------------------------------------
 CREATE TABLE seguimiento (
   id_seguimiento      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_persona          INT UNSIGNED NOT NULL,
@@ -289,9 +232,6 @@ CREATE TABLE seguimiento (
     REFERENCES usuario (id_usuario) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB COMMENT='Contactos de acompañamiento realizados a cada persona';
 
--- ---------------------------------------------------------------------
--- 2.9 Eventos
--- ---------------------------------------------------------------------
 CREATE TABLE evento (
   id_evento         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   titulo            VARCHAR(150) NOT NULL,
@@ -321,9 +261,6 @@ CREATE TABLE asistencia_evento (
     REFERENCES persona (id_persona) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB COMMENT='Personas que asistieron a cada evento (N:M)';
 
--- ---------------------------------------------------------------------
--- 2.10 Alertas
--- ---------------------------------------------------------------------
 CREATE TABLE alerta (
   id_alerta         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   tipo              ENUM('inasistencia','sin_seguimiento','grupo','discipulado') NOT NULL,
@@ -345,9 +282,6 @@ CREATE TABLE alerta (
     REFERENCES usuario (id_usuario) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Alertas generadas por inasistencias o falta de seguimiento';
 
--- ---------------------------------------------------------------------
--- 2.11 Auditoría (historial de cambios)
--- ---------------------------------------------------------------------
 CREATE TABLE auditoria (
   id_auditoria    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_usuario      INT UNSIGNED NULL,
@@ -361,9 +295,6 @@ CREATE TABLE auditoria (
     REFERENCES usuario (id_usuario) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Bitácora de trazabilidad de cambios importantes';
 
--- =====================================================================
--- 3. ÍNDICES PARA BÚSQUEDAS Y FILTROS
--- =====================================================================
 CREATE INDEX ix_persona_nombre      ON persona (apellidos, nombres);
 CREATE INDEX ix_persona_fase_activo ON persona (id_fase, activo);
 CREATE INDEX ix_grupo_ubicacion     ON grupo (latitud, longitud);
@@ -373,18 +304,14 @@ CREATE INDEX ix_evento_fecha        ON evento (fecha);
 CREATE INDEX ix_alerta_pendiente    ON alerta (resuelta, severidad);
 CREATE INDEX ix_auditoria_fecha     ON auditoria (fecha_hora);
 
--- =====================================================================
--- 4. FUNCIÓN DE GEOLOCALIZACIÓN Y PROCEDIMIENTOS
--- =====================================================================
 DELIMITER $$
 
--- Distancia aproximada en kilómetros entre dos coordenadas (fórmula de Haversine)
 CREATE FUNCTION fn_distancia_km(lat1 DECIMAL(10,7), lon1 DECIMAL(10,7),
                                 lat2 DECIMAL(10,7), lon2 DECIMAL(10,7))
 RETURNS DECIMAL(10,2)
 DETERMINISTIC
 BEGIN
-  DECLARE r DOUBLE DEFAULT 6371;  -- radio de la Tierra en km
+  DECLARE r DOUBLE DEFAULT 6371;
   DECLARE dlat DOUBLE;
   DECLARE dlon DOUBLE;
   DECLARE a DOUBLE;
@@ -395,7 +322,6 @@ BEGIN
   RETURN ROUND(r * 2 * ATAN2(SQRT(a), SQRT(1 - a)), 2);
 END$$
 
--- Grupos activos que están dentro de un radio (km) desde una ubicación
 CREATE PROCEDURE sp_grupos_cercanos(IN p_lat DECIMAL(10,7), IN p_lon DECIMAL(10,7),
                                     IN p_radio_km DECIMAL(6,2))
 BEGIN
@@ -408,7 +334,6 @@ BEGIN
   ORDER BY distancia_km;
 END$$
 
--- Desactivación lógica de una persona (no se borra para conservar historial)
 CREATE PROCEDURE sp_desactivar_persona(IN p_id_persona INT UNSIGNED,
                                        IN p_id_usuario INT UNSIGNED,
                                        IN p_motivo VARCHAR(255))
@@ -420,12 +345,6 @@ END$$
 
 DELIMITER ;
 
--- =====================================================================
--- 5. VISTAS DE INDICADORES
--- =====================================================================
-
--- 5.1 Inasistencias consecutivas: faltas registradas después de la última
---     vez que la persona estuvo presente en su grupo
 CREATE VIEW vw_inasistencias_consecutivas AS
 SELECT p.id_persona,
        (SELECT COUNT(*)
@@ -447,10 +366,6 @@ SELECT p.id_persona,
 FROM persona p
 WHERE p.activo = 1;
 
--- 5.2 Semáforo de acompañamiento
---   ROJO:     3 o más faltas consecutivas, o más de 30 días sin seguimiento
---   AMARILLO: 2 faltas consecutivas, o entre 15 y 30 días sin seguimiento
---   VERDE:    asistencia regular y seguimiento en los últimos 14 días
 CREATE VIEW vw_semaforo_persona AS
 SELECT p.id_persona,
        p.codigo,
@@ -479,7 +394,6 @@ WHERE p.activo = 1
 GROUP BY p.id_persona, p.codigo, p.nombres, p.apellidos, g.nombre, f.nombre,
          m.nombres, m.apellidos, i.faltas_consecutivas, i.ultima_asistencia, p.fecha_ingreso;
 
--- 5.3 Indicadores por grupo: miembros y porcentaje de asistencia
 CREATE VIEW vw_indicadores_grupo AS
 SELECT g.id_grupo,
        g.codigo,
@@ -500,14 +414,12 @@ JOIN distrito d  ON d.id_distrito = z.id_distrito
 LEFT JOIN persona l ON l.id_persona = g.id_lider
 WHERE g.activo = 1;
 
--- 5.4 Distribución de personas por fase de discipulado
 CREATE VIEW vw_personas_por_fase AS
 SELECT f.orden, f.nombre AS fase, COUNT(p.id_persona) AS total_personas
 FROM fase_discipulado f
 LEFT JOIN persona p ON p.id_fase = f.id_fase AND p.activo = 1
 GROUP BY f.id_fase, f.orden, f.nombre;
 
--- 5.5 Resumen para el dashboard
 CREATE VIEW vw_dashboard AS
 SELECT
   (SELECT COUNT(*) FROM persona WHERE activo = 1)                          AS personas_activas,
@@ -521,8 +433,6 @@ SELECT
   (SELECT COUNT(*) FROM evento
     WHERE activo = 1 AND estado = 'programado' AND fecha >= CURDATE())     AS eventos_proximos;
 
--- Procedimiento que genera alertas a partir del semáforo
--- (evita duplicar alertas que siguen sin resolver)
 DELIMITER $$
 CREATE PROCEDURE sp_generar_alertas()
 BEGIN
@@ -556,15 +466,8 @@ BEGIN
 END$$
 DELIMITER ;
 
--- =====================================================================
--- 6. DISPARADORES (TRIGGERS)
---   La aplicación debe ejecutar  SET @id_usuario_app = <id>;  al iniciar
---   la sesión para que la auditoría sepa qué usuario hizo el cambio.
--- =====================================================================
 DELIMITER $$
 
--- Una persona no puede ser su propio mentor
--- (MySQL no permite un CHECK sobre una columna con ON DELETE SET NULL)
 CREATE TRIGGER trg_persona_bu BEFORE UPDATE ON persona
 FOR EACH ROW
 BEGIN
@@ -573,7 +476,6 @@ BEGIN
   END IF;
 END$$
 
--- Al crear una persona se abre su primer registro de discipulado
 CREATE TRIGGER trg_persona_ai AFTER INSERT ON persona
 FOR EACH ROW
 BEGIN
@@ -585,7 +487,6 @@ BEGIN
           CONCAT('Nueva persona: ', NEW.nombres, ' ', NEW.apellidos));
 END$$
 
--- Al cambiar de fase se cierra la fase anterior y se abre la nueva
 CREATE TRIGGER trg_persona_au AFTER UPDATE ON persona
 FOR EACH ROW
 BEGIN
@@ -609,7 +510,6 @@ BEGIN
   END IF;
 END$$
 
--- Toda nueva sesión de seguimiento queda en la bitácora
 CREATE TRIGGER trg_seguimiento_ai AFTER INSERT ON seguimiento
 FOR EACH ROW
 BEGIN
@@ -620,9 +520,6 @@ END$$
 
 DELIMITER ;
 
--- =====================================================================
--- 7. DATOS DE EJEMPLO (Villavicencio, Meta)
--- =====================================================================
 SET @id_usuario_app = NULL;
 
 INSERT INTO distrito (nombre, descripcion) VALUES
@@ -661,25 +558,18 @@ INSERT INTO permiso (codigo, descripcion, modulo) VALUES
  ('AUDITORIA_VER',         'Consultar la bitácora de cambios',         'Auditoría'),
  ('USUARIO_GESTIONAR',     'Administrar usuarios y roles',             'Roles');
 
--- Administrador: todos los permisos
 INSERT INTO rol_permiso (id_rol, id_permiso) SELECT 1, id_permiso FROM permiso;
--- Pastor de distrito: todo menos administrar usuarios
 INSERT INTO rol_permiso (id_rol, id_permiso) SELECT 2, id_permiso FROM permiso WHERE codigo <> 'USUARIO_GESTIONAR';
--- Pastor local
 INSERT INTO rol_permiso (id_rol, id_permiso) SELECT 3, id_permiso FROM permiso
  WHERE codigo IN ('PERSONA_GESTIONAR','PERSONA_CONSULTAR','GRUPO_GESTIONAR','ASISTENCIA_REGISTRAR',
                   'SEGUIMIENTO_REGISTRAR','EVENTO_GESTIONAR','REPORTE_VER');
--- Asistentes
 INSERT INTO rol_permiso (id_rol, id_permiso) SELECT r.id_rol, p.id_permiso FROM rol r, permiso p
  WHERE r.id_rol IN (4,5)
    AND p.codigo IN ('PERSONA_CONSULTAR','ASISTENCIA_REGISTRAR','SEGUIMIENTO_REGISTRAR','EVENTO_GESTIONAR','REPORTE_VER');
--- Discipulador
 INSERT INTO rol_permiso (id_rol, id_permiso) SELECT 6, id_permiso FROM permiso
  WHERE codigo IN ('PERSONA_CONSULTAR','ASISTENCIA_REGISTRAR','SEGUIMIENTO_REGISTRAR');
--- Discípulo
 INSERT INTO rol_permiso (id_rol, id_permiso) SELECT 7, id_permiso FROM permiso WHERE codigo = 'PERSONA_CONSULTAR';
 
--- Personas (primero sin grupo ni mentor, se asignan después)
 INSERT INTO persona (codigo, tipo_documento, numero_documento, nombres, apellidos, fecha_nacimiento, genero,
                      telefono, correo, direccion, barrio, id_fase, fecha_ingreso, autoriza_datos, fecha_autorizacion) VALUES
  ('MT-0001','CC','1121800101','Carlos Andrés','Mendoza Ruiz',   '1975-03-14','M','3101234501','carlos.mendoza@misiontec.org','Cra 40 # 26-15','Barzal',      4,'2015-02-01',1,'2026-01-10 09:00:00'),
@@ -708,7 +598,6 @@ INSERT INTO grupo (codigo, nombre, id_zona, id_lider, id_asistente, direccion, b
  ('GM-SUR-03','Semillero Monte Sión',        3, 5, 9,  'Cl 60 Sur # 18-25', 'Porfía',       4.0847000, -73.6735000, 'Viernes',   '19:00', 'observacion', '2021-03-05'),
  ('GM-ORI-04','Generación de Impacto',       4, 6, 10, 'Cra 12 # 9-30',     'La Esperanza', 4.1385000, -73.6098000, 'Sábado',    '18:00', 'activo',      '2022-08-06');
 
--- Asignación de grupo y mentor
 UPDATE persona SET id_grupo = 1 WHERE id_persona IN (3,7,11,12,13);
 UPDATE persona SET id_grupo = 2 WHERE id_persona IN (4,8,14,15);
 UPDATE persona SET id_grupo = 3 WHERE id_persona IN (5,9,16,17);
@@ -732,8 +621,6 @@ INSERT INTO persona_rol (id_persona, id_rol, fecha_inicio) VALUES
 INSERT INTO etiqueta (nombre) VALUES ('Nuevo creyente'), ('Joven'), ('Músico'), ('Necesita visita'), ('Servidor');
 INSERT INTO persona_etiqueta VALUES (13,1),(15,1),(15,2),(18,1),(18,2),(8,3),(13,4),(12,5),(17,5);
 
--- Usuarios (contrasena_hash de ejemplo: SHA2 sólo para pruebas; en
--- producción usar bcrypt/argon2 desde la aplicación)
 INSERT INTO usuario (id_persona, id_rol, nombre_usuario, contrasena_hash) VALUES
  (1, 1, 'cmendoza',  SHA2('Misiontec2026*', 256)),
  (2, 3, 'eramos',    SHA2('Misiontec2026*', 256)),
@@ -743,7 +630,6 @@ INSERT INTO usuario (id_persona, id_rol, nombre_usuario, contrasena_hash) VALUES
  (6, 6, 'asalazar',  SHA2('Misiontec2026*', 256)),
  (7, 5, 'dparedes',  SHA2('Misiontec2026*', 256));
 
--- Sesiones de asistencia de las últimas cuatro semanas
 INSERT INTO sesion_asistencia (id_grupo, fecha, tema, id_usuario) VALUES
  (1,'2026-09-10','El llamado de Abraham',      3),(1,'2026-09-17','Fe que obra',            3),
  (1,'2026-09-24','La oración eficaz',          3),(1,'2026-10-01','El fruto del Espíritu',  3),
@@ -754,24 +640,19 @@ INSERT INTO sesion_asistencia (id_grupo, fecha, tema, id_usuario) VALUES
  (4,'2026-09-12','Identidad en Cristo',        6),(4,'2026-09-19','Propósito y llamado',    6),
  (4,'2026-09-26','Jóvenes que impactan',       6),(4,'2026-10-03','Amistad con Dios',       6);
 
--- Todos los miembros quedan presentes y luego se registran las faltas
 INSERT INTO detalle_asistencia (id_sesion, id_persona, estado)
 SELECT s.id_sesion, p.id_persona, 'presente'
 FROM sesion_asistencia s
 JOIN persona p ON p.id_grupo = s.id_grupo
 WHERE p.fecha_ingreso <= s.fecha;
 
--- Natalia (13): 3 faltas seguidas -> semáforo rojo
 UPDATE detalle_asistencia SET estado = 'falta_injustificada'
  WHERE id_persona = 13 AND id_sesion IN (2,3,4);
--- Julián (16): 2 faltas seguidas -> semáforo amarillo
 UPDATE detalle_asistencia SET estado = 'falta_injustificada' WHERE id_persona = 16 AND id_sesion = 11;
 UPDATE detalle_asistencia SET estado = 'falta_justificada', observacion = 'Viaje de trabajo'
  WHERE id_persona = 16 AND id_sesion = 12;
--- Diana (17): una falta justificada esporádica
 UPDATE detalle_asistencia SET estado = 'falta_justificada', observacion = 'Cita médica'
  WHERE id_persona = 17 AND id_sesion = 10;
--- Miguel (14): una falta aislada
 UPDATE detalle_asistencia SET estado = 'falta_injustificada' WHERE id_persona = 14 AND id_sesion = 6;
 
 INSERT INTO seguimiento (id_persona, id_usuario, fecha, canal, estado_pastoral, notas, compromisos,
@@ -806,18 +687,5 @@ INSERT INTO asistencia_evento (id_evento, id_persona)
 SELECT 1, id_persona FROM persona WHERE id_persona NOT IN (13, 16);
 INSERT INTO asistencia_evento (id_evento, id_persona) VALUES (5,5),(5,9),(5,17);
 
--- Generar alertas a partir de los datos cargados
 CALL sp_generar_alertas();
 
--- =====================================================================
--- CONSULTAS DE PRUEBA (descomentar para ejecutar en Workbench)
--- =====================================================================
--- SELECT * FROM vw_dashboard;
--- SELECT * FROM vw_semaforo_persona ORDER BY FIELD(semaforo,'rojo','amarillo','verde');
--- SELECT * FROM vw_indicadores_grupo;
--- SELECT * FROM vw_personas_por_fase ORDER BY orden;
--- SELECT * FROM alerta WHERE resuelta = 0;
--- CALL sp_grupos_cercanos(4.1420, -73.6266, 5);   -- grupos a 5 km del centro de Villavicencio
--- SET @id_usuario_app = 1; UPDATE persona SET id_fase = 2 WHERE id_persona = 13;
--- SELECT * FROM historial_discipulado WHERE id_persona = 13;
--- SELECT * FROM auditoria ORDER BY fecha_hora DESC;

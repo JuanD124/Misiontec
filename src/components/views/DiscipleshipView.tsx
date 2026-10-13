@@ -27,7 +27,6 @@ export const DiscipleshipView: React.FC<DiscipleshipViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Title Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8DFD7] shadow-xs">
         <div>
           <h1 className="text-lg font-serif font-bold text-[#2D1F17] flex items-center gap-2">
@@ -40,14 +39,12 @@ export const DiscipleshipView: React.FC<DiscipleshipViewProps> = ({
         </div>
       </div>
 
-      {/* Primary Visual Funnel Component */}
       <DiscipleshipFunnel
         people={people}
         onPromotePerson={onPromotePerson}
         onOpenPersonDetail={onOpenPersonDetail}
       />
 
-      {/* Kanban Stages Board */}
       <div className="mt-6">
         <h2 className="text-sm font-serif font-bold text-[#2D1F17] mb-3 flex items-center gap-2">
           <span>Tablero de Progresión Espiritual</span>
@@ -63,7 +60,6 @@ export const DiscipleshipView: React.FC<DiscipleshipViewProps> = ({
                 key={phase.key}
                 className="bg-[#FAF7F2] border border-[#E8DFD7] rounded-xl p-3.5 flex flex-col max-h-[600px]"
               >
-                {/* Stage Header */}
                 <div className="pb-3 mb-3 border-b border-[#E8DFD7] flex items-center justify-between">
                   <div>
                     <h3 className="text-xs font-serif font-bold text-[#2D1F17]">{phase.name}</h3>
@@ -72,7 +68,6 @@ export const DiscipleshipView: React.FC<DiscipleshipViewProps> = ({
                   <span className="w-2.5 h-2.5 rounded-full bg-[#8C5D36]" />
                 </div>
 
-                {/* Member Cards in Column */}
                 <div className="space-y-2 overflow-y-auto flex-1 pr-1 custom-scrollbar">
                   {members.map((m) => {
                     const next = getNextPhase(m.phase);

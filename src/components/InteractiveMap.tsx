@@ -34,8 +34,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const mapWidth = 800;
   const mapHeight = 460;
 
-  // Los límites del mapa se calculan a partir de las coordenadas reales de
-  // los grupos guardados en la base de datos (con un margen alrededor)
   const lats = groups.map(g => g.lat);
   const lngs = groups.map(g => g.lng);
   const padLat = lats.length ? Math.max((Math.max(...lats) - Math.min(...lats)) * 0.2, 0.01) : 0.1;
@@ -73,7 +71,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   return (
     <div className="bg-white border border-[#E8DFD7] rounded-xl shadow-xs overflow-hidden flex flex-col">
-      {/* Map Header Toolbar */}
       <div className="p-4.5 border-b border-[#E8DFD7] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
         <div>
           <div className="flex items-center gap-2">
@@ -90,7 +87,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           </p>
         </div>
 
-        {/* Controls: Search radius, Layer toggle */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 bg-[#FAF7F2] border border-[#E0D4C7] px-2.5 py-1 rounded-lg text-xs">
             <Navigation className="w-3.5 h-3.5 text-[#8C5D36]" />
@@ -142,7 +138,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         </div>
       </div>
 
-      {/* Map Visual Stage */}
       <div className="relative w-full h-[380px] sm:h-[420px] bg-[#F7F3EC] overflow-hidden select-none border-b border-[#E8DFD7]">
         <svg 
           viewBox={`0 0 ${mapWidth} ${mapHeight}`} 
@@ -168,11 +163,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </filter>
           </defs>
 
-          {/* Base Paper Canvas */}
           <rect width={mapWidth} height={mapHeight} fill={mapLayer === 'satellite' ? '#EFE9DE' : '#F7F3EC'} />
           <rect width={mapWidth} height={mapHeight} fill="url(#grid-pattern-coffee)" />
 
-          {/* Pacific Coastline in soft warm linen/water */}
           <path
             d="M 0,0 L 140,0 Q 180,120 160,220 T 130,340 Q 110,410 70,460 L 0,460 Z"
             fill="#E2DBD0"
@@ -182,7 +175,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             OCÉANO PACÍFICO
           </text>
 
-          {/* Road Network / Boundaries */}
           <g stroke="#DDD3C5" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8">
             <path d="M 160,50 Q 280,180 320,320 T 360,460" stroke="#C7B8A6" strokeWidth="2" strokeDasharray="none" />
             <path d="M 180,240 Q 380,220 540,260 T 780,290" stroke="#C7B8A6" strokeWidth="2" strokeDasharray="none" />
@@ -192,14 +184,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             <path d="M 500,60 L 500,420" />
           </g>
 
-          {/* District Labels */}
           <text x="240" y="80" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">ZONA NORTE (Los Olivos)</text>
           <text x="330" y="220" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">ZONA CENTRO (Jesús María)</text>
           <text x="270" y="380" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">ZONA SUR (Chorrillos)</text>
           <text x="560" y="160" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">ZONA ESTE (SJL)</text>
           <text x="180" y="200" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">CALLAO</text>
 
-          {/* Heatmap Layer */}
           {mapLayer === 'heatmap' && (
             <g filter="url(#heat-blur-coffee)">
               {groups.map((g) => (
@@ -215,7 +205,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </g>
           )}
 
-          {/* Radius Radar Circle */}
           {selectedGroup && (
             <g>
               <circle
@@ -240,7 +229,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </g>
           )}
 
-          {/* Pins */}
           {groups.map((grp) => {
             const x = lngToX(grp.lng);
             const y = latToY(grp.lat);
@@ -265,7 +253,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   />
                 )}
 
-                {/* Outer Pin circle */}
                 <circle
                   cx={x}
                   cy={y}
@@ -275,7 +262,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   strokeWidth={isSelected ? "2" : "1.5"}
                 />
 
-                {/* Inner member count */}
                 <text
                   x={x}
                   y={y + 3.5}
@@ -287,7 +273,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                   {grp.memberCount}
                 </text>
 
-                {/* Tooltip Label */}
                 <text
                   x={x}
                   y={y - 14}
@@ -304,7 +289,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           })}
         </svg>
 
-        {/* Map Zoom Controls */}
         <div className="absolute top-4 right-4 flex flex-col gap-1.5 z-10">
           <button
             onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2.5))}
@@ -329,7 +313,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           </button>
         </div>
 
-        {/* Floating Legend */}
         <div className="absolute bottom-3 left-3 bg-white/95 border border-[#E8DFD7] rounded-lg p-2.5 backdrop-blur-xs text-[10px] text-[#7D6B5E] z-10 space-y-1.5 shadow-sm hidden sm:block">
           <p className="font-semibold text-[#2D1F17] uppercase tracking-wider text-[9px]">Simbología de Células:</p>
           <div className="flex items-center gap-2">
@@ -346,7 +329,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           </div>
         </div>
 
-        {/* Selected Group Detail Card */}
         {selectedGroup && (
           <div className="absolute bottom-3 right-3 max-w-sm w-80 bg-white border border-[#E0D4C7] rounded-xl shadow-md p-3.5 z-20">
             <div className="flex items-start justify-between gap-2 mb-2">

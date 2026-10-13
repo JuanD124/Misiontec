@@ -58,7 +58,6 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Top Banner & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8DFD7] shadow-xs">
         <div>
           <h1 className="text-lg font-serif font-bold text-[#2D1F17] flex items-center gap-2">
@@ -89,9 +88,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
         </div>
       </div>
 
-      {/* Filter Bar */}
       <div className="p-4 bg-white rounded-xl border border-[#E8DFD7] shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        {/* Search */}
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-[#998576] absolute left-2.5 top-2.5" />
           <input
@@ -103,7 +100,6 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
           />
         </div>
 
-        {/* Phase */}
         <div>
           <select
             value={phaseFilter}
@@ -118,7 +114,6 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
           </select>
         </div>
 
-        {/* Group */}
         <div>
           <select
             value={groupFilter}
@@ -132,7 +127,6 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
           </select>
         </div>
 
-        {/* Status */}
         <div>
           <select
             value={statusFilter}
@@ -147,7 +141,6 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
         </div>
       </div>
 
-      {/* People Table */}
       <div className="bg-white rounded-xl border border-[#E8DFD7] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">

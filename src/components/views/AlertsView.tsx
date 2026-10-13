@@ -28,7 +28,6 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Title Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8DFD7] shadow-xs">
         <div>
           <h1 className="text-lg font-serif font-bold text-[#2D1F17] flex items-center gap-2">
@@ -48,9 +47,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
         </div>
       </div>
 
-      {/* Emergency Action Banners */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Critical Rescue Queue */}
         <div className="p-4 bg-[#FDF7F6] border border-[#F2D0CC] rounded-xl">
           <h3 className="text-xs font-serif font-bold text-[#8C3527] flex items-center gap-2 mb-1.5">
             <HeartHandshake className="w-4 h-4 text-[#9E382A]" />
@@ -85,7 +82,6 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
           </div>
         </div>
 
-        {/* Warning / Preventative Queue */}
         <div className="p-4 bg-[#FAF7F0] border border-[#EBDCC2] rounded-xl">
           <h3 className="text-xs font-serif font-bold text-[#946A1B] flex items-center gap-2 mb-1.5">
             <Clock className="w-4 h-4 text-[#B38646]" />
@@ -121,7 +117,6 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
         </div>
       </div>
 
-      {/* Main Table */}
       <TrafficLightTable
         people={people}
         onOpenFollowUpModal={onOpenFollowUpModal}

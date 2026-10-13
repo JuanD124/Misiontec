@@ -71,7 +71,6 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D1F17]/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white border border-[#E8DFD7] rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
         <div className="p-5 border-b border-[#E8DFD7] flex items-center justify-between bg-[#FAF7F2]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#E8DFD7] text-[#3B281C] flex items-center justify-center">
@@ -94,9 +93,7 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
           </button>
         </div>
 
-        {/* Form Content */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs custom-scrollbar">
-          {/* Member selector */}
           <div>
             <label className="block font-medium text-[#2D1F17] mb-1">
               Hermano en Cuidado *
@@ -126,7 +123,6 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
             )}
           </div>
 
-          {/* Contact Channel Selector */}
           <div>
             <label className="block font-medium text-[#2D1F17] mb-1.5">
               Canal de Comunicación Empleado *
@@ -186,7 +182,6 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
             </div>
           </div>
 
-          {/* Spiritual state */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-medium text-[#2D1F17] mb-1">
@@ -218,7 +213,6 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
             </div>
           </div>
 
-          {/* Notes */}
           <div>
             <label className="block font-medium text-[#2D1F17] mb-1">
               Observaciones & Conversación Pastoral *
@@ -233,7 +227,6 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
             />
           </div>
 
-          {/* Commitments */}
           <div>
             <label className="block font-medium text-[#2D1F17] mb-1">
               Compromiso Acordado
@@ -247,7 +240,6 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
             />
           </div>
 
-          {/* Resulting Traffic Light State */}
           <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-[#E8DFD7]">
             <label className="block font-serif font-bold text-[#2D1F17] mb-2">
               Actualizar Estado Pastoral tras este contacto:
@@ -294,7 +286,6 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
             </div>
           </div>
 
-          {/* Submit */}
           <div className="pt-2 border-t border-[#E8DFD7] flex items-center justify-end gap-3">
             <button
               type="button"

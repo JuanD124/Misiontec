@@ -29,7 +29,6 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
   const [selectedPhase, setSelectedPhase] = useState<'all' | DiscipleshipPhase>('all');
   const [tableSearch, setTableSearch] = useState('');
 
-  // Filtering
   const filteredPeople = people.filter((person) => {
     const matchesStatus = statusFilter === 'all' || person.status === statusFilter;
     const matchesPhase = selectedPhase === 'all' || person.phase === selectedPhase;
@@ -95,7 +94,6 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
 
   return (
     <div className="bg-white border border-[#E8DFD7] rounded-xl shadow-xs overflow-hidden">
-      {/* Header and Semantic Legend */}
       <div className="p-4.5 border-b border-[#E8DFD7] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -112,7 +110,6 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
           </p>
         </div>
 
-        {/* Filter Pills */}
         <div className="flex items-center gap-1 bg-[#FAF7F2] border border-[#E8DFD7] p-1 rounded-lg self-start md:self-auto">
           <button
             onClick={() => onStatusFilterChange('all')}
@@ -160,7 +157,6 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
         </div>
       </div>
 
-      {/* Sub-toolbar: Search & Phase Filter */}
       <div className="px-4.5 py-2.5 bg-[#FAF7F2] border-b border-[#E8DFD7] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="w-3.5 h-3.5 text-[#998576] absolute left-2.5 top-2.5 pointer-events-none" />
@@ -192,7 +188,6 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
         </div>
       </div>
 
-      {/* Table Content */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-[#FAF7F2] text-[#7D6B5E] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8DFD7]">
@@ -225,7 +220,6 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                       isRed ? 'bg-[#FDF8F7]' : ''
                     }`}
                   >
-                    {/* Persona */}
                     <td className="py-3 px-4.5">
                       <div className="flex items-center gap-2.5">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 text-white ${
@@ -248,18 +242,15 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Grupo */}
                     <td className="py-3 px-4.5 text-[#4A3425]">
                       <p className="font-medium text-xs">{person.groupName}</p>
                       <p className="text-[10px] text-[#8C7A6D]">{person.district}</p>
                     </td>
 
-                    {/* Fase */}
                     <td className="py-3 px-4.5">
                       {getPhaseBadge(person.phase)}
                     </td>
 
-                    {/* Última Asistencia */}
                     <td className="py-3 px-4.5">
                       <div className="flex items-center gap-1.5 text-[#4A3425]">
                         <Calendar className="w-3 h-3 text-[#998576]" />
@@ -274,12 +265,10 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                       )}
                     </td>
 
-                    {/* Estado Semáforo */}
                     <td className="py-3 px-4.5">
                       {getStatusBadge(person.status, person.consecutiveAbsences, person.daysSinceLastContact)}
                     </td>
 
-                    {/* Mentor */}
                     <td className="py-3 px-4.5 text-[#4A3425]">
                       <p className="font-medium text-xs">{person.mentorName}</p>
                       <p className="text-[10px] text-[#8C7A6D] flex items-center gap-1">
@@ -287,7 +276,6 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                       </p>
                     </td>
 
-                    {/* Quick Action Button */}
                     <td className="py-3 px-4.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
@@ -323,7 +311,6 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
         </table>
       </div>
 
-      {/* Semantic Footer Legend */}
       <div className="p-3.5 bg-[#FAF7F2] border-t border-[#E8DFD7] text-[11px] text-[#7D6B5E] flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="font-semibold text-[#2D1F17]">Criterios de Cuidado Pastoral:</span>

@@ -22,7 +22,6 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
 }) => {
   const [selectedPhaseKey, setSelectedPhaseKey] = useState<DiscipleshipPhase>('consolidacion');
 
-  // Count per phase
   const phaseCounts = {
     contacto: people.filter(p => p.phase === 'contacto').length,
     consolidacion: people.filter(p => p.phase === 'consolidacion').length,
@@ -51,7 +50,6 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
 
   return (
     <div className="bg-white border border-[#E8DFD7] rounded-xl shadow-xs overflow-hidden">
-      {/* Card Header */}
       <div className="p-4.5 border-b border-[#E8DFD7] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
@@ -74,7 +72,6 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
         </div>
       </div>
 
-      {/* Visual Funnel Stages */}
       <div className="p-4.5 bg-[#FAF7F2] border-b border-[#E8DFD7]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {DISCIPLESHIP_PHASES_META.map((phase, idx) => {
@@ -130,7 +127,6 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
         </div>
       </div>
 
-      {/* Selected Phase Detail & Member List */}
       <div className="p-4.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-3 border-b border-[#F2ECE4]">
           <div>
@@ -148,7 +144,6 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
           </span>
         </div>
 
-        {/* Member cards inside selected phase */}
         {membersInSelectedPhase.length === 0 ? (
           <div className="py-6 text-center text-xs text-[#998576] italic">
             No hay discípulos en esta etapa formativa en este momento.
@@ -196,7 +191,6 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
                     </div>
                   </div>
 
-                  {/* Promote button */}
                   {nextPhase ? (
                     <button
                       onClick={() => onPromotePerson(member.id, nextPhase)}

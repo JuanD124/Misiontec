@@ -81,7 +81,6 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
 
   return (
     <div className="bg-white border border-[#E8DFD7] rounded-xl shadow-xs overflow-hidden">
-      {/* Header toolbar */}
       <div className="p-4.5 border-b border-[#E8DFD7] flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -98,7 +97,6 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
           </p>
         </div>
 
-        {/* Group Selector & Meeting Date */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 bg-[#FAF7F2] px-2.5 py-1.5 rounded-lg border border-[#E0D4C7] text-xs">
             <Users className="w-3.5 h-3.5 text-[#8C5D36]" />
@@ -127,7 +125,6 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
         </div>
       </div>
 
-      {/* Summary Stat Bar & Batch Action */}
       <div className="px-4.5 py-2.5 bg-[#FAF7F2] border-b border-[#E8DFD7] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-[#7D6B5E]">
@@ -159,7 +156,6 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
         </div>
       </div>
 
-      {/* Attendance Checkbox List */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-[#FAF7F2] text-[#7D6B5E] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8DFD7]">
@@ -263,7 +259,6 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
         </table>
       </div>
 
-      {/* Save Button & Feedback Banner */}
       <div className="p-4.5 bg-[#FAF7F2] border-t border-[#E8DFD7] flex items-center justify-between">
         <div className="text-xs text-[#7D6B5E]">
           {isSavedRecently ? (

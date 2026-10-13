@@ -41,7 +41,6 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D1F17]/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white border border-[#E8DFD7] rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
         <div className="p-5 border-b border-[#E8DFD7] bg-[#FAF7F2] flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-serif font-bold text-white shadow-xs ${
@@ -80,9 +79,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto space-y-5 text-xs custom-scrollbar">
-          {/* Key Info Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#E8DFD7]">
               <span className="text-[10px] text-[#7D6B5E] font-medium block">Etapa de Formación</span>
@@ -107,7 +104,6 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Contact Details & Address */}
           <div className="p-4 bg-[#FAF7F2] rounded-xl border border-[#E8DFD7] space-y-2">
             <h4 className="font-serif font-bold text-[#2D1F17] flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-[#8C5D36]" />
@@ -131,7 +127,6 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
             )}
           </div>
 
-          {/* Critical Notes if any */}
           {person.criticalNotes && (
             <div className="p-3.5 bg-[#FDF7F6] border border-[#F2D0CC] rounded-xl text-[#8C3527]">
               <p className="font-serif font-bold flex items-center gap-1.5 text-xs mb-1">
@@ -142,7 +137,6 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
             </div>
           )}
 
-          {/* Follow-up Timeline */}
           <div>
             <h4 className="font-serif font-bold text-[#2D1F17] mb-2 flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-[#8C5D36]" />
@@ -173,7 +167,6 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
             )}
           </div>
 
-          {/* Actions */}
           <div className="pt-3 border-t border-[#E8DFD7] flex items-center justify-between gap-3">
             {nextPhase ? (
               <button

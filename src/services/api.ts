@@ -8,10 +8,7 @@ import type {
   DiscipleshipPhase,
 } from '../types';
 
-// Cliente de la API de MISIONTEC. En desarrollo Vite redirige /api al
-// servidor Express (ver vite.config.ts), así que no hace falta poner la URL.
 
-// Mientras no haya login se trabaja como el usuario 1 (administrador)
 let usuarioId = 1;
 export const setUsuarioActual = (id: number) => { usuarioId = id; };
 

@@ -60,7 +60,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Handle outside clicks
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -77,7 +76,6 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter search results
   const filteredPeople = searchQuery.trim().length > 1
     ? allPeople.filter(p => 
         p.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,7 +92,6 @@ export const Header: React.FC<HeaderProps> = ({
       ).slice(0, 2)
     : [];
 
-  // Formatted date in Spanish
   const todayFormatted = new Intl.DateTimeFormat('es-PE', {
     weekday: 'short',
     day: 'numeric',
@@ -107,7 +104,6 @@ export const Header: React.FC<HeaderProps> = ({
       id="main-app-header"
       className="h-16 bg-[#FFFFFF] border-b border-[#E8DFD7] px-6 flex items-center justify-between gap-4 sticky top-0 z-20 shadow-xs"
     >
-      {/* Left: Global Search & Instant Results */}
       <div className="flex-1 max-w-xl relative" ref={searchRef}>
         <div className="relative flex items-center">
           <Search className="w-4 h-4 text-[#998576] absolute left-3 pointer-events-none" />
@@ -130,7 +126,6 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Instant Search Dropdown Results */}
         {searchFocused && (filteredPeople.length > 0 || filteredGroups.length > 0) && (
           <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#E8DFD7] rounded-xl shadow-lg p-2 z-50">
             {filteredPeople.length > 0 && (
@@ -189,9 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
       </div>
 
-      {/* Right Controls */}
       <div className="flex items-center gap-3">
-        {/* District Selector Filter */}
         <div className="hidden lg:flex items-center gap-1.5 bg-[#FAF7F2] border border-[#E8DFD7] px-2.5 py-1.5 rounded-lg text-xs">
           <MapPin className="w-3.5 h-3.5 text-[#8C5D36]" />
           <span className="text-[11px] text-[#7D6B5E]">Zona:</span>
@@ -208,13 +201,11 @@ export const Header: React.FC<HeaderProps> = ({
           </select>
         </div>
 
-        {/* Pastoral Date badge */}
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF7F2] rounded-lg text-xs text-[#7D6B5E] border border-[#E8DFD7]">
           <Clock className="w-3.5 h-3.5 text-[#8C5D36]" />
           <span className="text-[11px] capitalize font-medium">{todayFormatted}</span>
         </div>
 
-        {/* Notifications Dropdown */}
         <div className="relative" ref={notifRef}>
           <button
             id="btn-notifications-bell"
@@ -298,7 +289,6 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Fast Action Primary Button: Religious & Coffee style */}
         <div className="relative" ref={newMenuRef}>
           <button
             id="btn-header-quick-action"

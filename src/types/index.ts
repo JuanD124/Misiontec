@@ -55,7 +55,7 @@ export interface MissionaryGroup {
   meetingDay: string;
   meetingTime: string;
   memberCount: number;
-  averageAttendanceRate: number; // percentage e.g. 88
+  averageAttendanceRate: number;
   status: 'active' | 'watch' | 'inactive';
   criticalMembersCount: number;
 }
