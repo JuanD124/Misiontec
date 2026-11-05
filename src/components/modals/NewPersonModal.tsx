@@ -63,25 +63,25 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-5 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F6F8FB]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A0A0A]/50 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white border border-[#E8E8E8] rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-5 border-b border-[#E8E8E8] flex items-center justify-between bg-[#FAFAFA]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E2E8F0] text-[#4F46E5] flex items-center justify-center">
-              <UserPlus className="w-5 h-5 text-[#4F46E5]" />
+            <div className="w-10 h-10 rounded-xl bg-[#E8E8E8] text-[#EA580C] flex items-center justify-center">
+              <UserPlus className="w-5 h-5 text-[#EA580C]" />
             </div>
             <div>
-              <h2 className="text-base font-serif font-bold text-[#0F172A]">
+              <h2 className="text-base font-serif font-bold text-[#0A0A0A]">
                 Registrar Nuevo Hermano en la Comunidad
               </h2>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[#6B6B6B]">
                 Incorporación al padrón de cuidado pastoral y asignación a grupo de discipulado.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-[#7B8BA3] hover:text-[#0F172A] rounded-lg hover:bg-[#EEF2F7] transition-colors"
+            className="p-1.5 text-[#8A8A8A] hover:text-[#0A0A0A] rounded-lg hover:bg-[#F2F2F2] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -90,7 +90,7 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-medium text-[#0F172A] mb-1">
+              <label className="block font-medium text-[#0A0A0A] mb-1">
                 Nombres y Apellidos Completos *
               </label>
               <input
@@ -99,12 +99,12 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Ej. Sara Milagros Valencia Vega"
-                className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
               />
             </div>
 
             <div>
-              <label className="block font-medium text-[#0F172A] mb-1">
+              <label className="block font-medium text-[#0A0A0A] mb-1">
                 Documento de Identidad (DNI) *
               </label>
               <input
@@ -114,24 +114,24 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
                 value={dni}
                 onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
                 placeholder="8 dígitos numéricos"
-                className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A] font-mono"
+                className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A] font-mono"
               />
             </div>
 
             <div>
-              <label className="block font-medium text-[#0F172A] mb-1">
+              <label className="block font-medium text-[#0A0A0A] mb-1">
                 Teléfono / WhatsApp
               </label>
               <input
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
               />
             </div>
 
             <div>
-              <label className="block font-medium text-[#0F172A] mb-1">
+              <label className="block font-medium text-[#0A0A0A] mb-1">
                 Correo Electrónico
               </label>
               <input
@@ -139,13 +139,13 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="correo@ejemplo.com"
-                className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block font-medium text-[#0F172A] mb-1">
+                <label className="block font-medium text-[#0A0A0A] mb-1">
                   Edad
                 </label>
                 <input
@@ -154,17 +154,17 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
                   max={99}
                   value={age}
                   onChange={(e) => setAge(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                  className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
                 />
               </div>
               <div>
-                <label className="block font-medium text-[#0F172A] mb-1">
+                <label className="block font-medium text-[#0A0A0A] mb-1">
                   Género
                 </label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                  className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
                 >
                   <option value="M">Masculino</option>
                   <option value="F">Femenino</option>
@@ -173,20 +173,20 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-medium text-[#0F172A] mb-1">
+              <label className="block font-medium text-[#0A0A0A] mb-1">
                 Distrito de Residencia
               </label>
               <input
                 type="text"
                 value={district}
                 onChange={(e) => setDistrict(e.target.value)}
-                className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-medium text-[#0F172A] mb-1">
+            <label className="block font-medium text-[#0A0A0A] mb-1">
               Dirección de Domicilio
             </label>
             <input
@@ -194,19 +194,19 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Av. / Jr. / Calle, Número o Referencia"
-              className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+              className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
             />
           </div>
 
-          <div className="pt-2 border-t border-[#E2E8F0]">
-            <h3 className="font-serif font-bold text-[#0F172A] mb-2 flex items-center gap-1.5">
-              <Church className="w-4 h-4 text-[#4F46E5]" />
+          <div className="pt-2 border-t border-[#E8E8E8]">
+            <h3 className="font-serif font-bold text-[#0A0A0A] mb-2 flex items-center gap-1.5">
+              <Church className="w-4 h-4 text-[#EA580C]" />
               Asignación de Grupo & Mentor Espiritual
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block font-medium text-[#0F172A] mb-1">
+                <label className="block font-medium text-[#0A0A0A] mb-1">
                   Grupo de Discipulado
                 </label>
                 <select
@@ -216,7 +216,7 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
                     const grp = groups.find(g => g.id === e.target.value);
                     if (grp) setMentorName(grp.leaderName);
                   }}
-                  className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                  className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
                 >
                   {groups.map(g => (
                     <option key={g.id} value={g.id}>{g.name}</option>
@@ -225,13 +225,13 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-[#0F172A] mb-1">
+                <label className="block font-medium text-[#0A0A0A] mb-1">
                   Etapa de Formación
                 </label>
                 <select
                   value={phase}
                   onChange={(e) => setPhase(e.target.value as DiscipleshipPhase)}
-                  className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                  className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
                 >
                   <option value="contacto">1. Bienvenida / Contacto</option>
                   <option value="consolidacion">2. Consolidación</option>
@@ -241,21 +241,21 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-medium text-[#0F172A] mb-1">
+                <label className="block font-medium text-[#0A0A0A] mb-1">
                   Mentor / Discipulador
                 </label>
                 <input
                   type="text"
                   value={mentorName}
                   onChange={(e) => setMentorName(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+                  className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block font-medium text-[#0F172A] mb-1">
+            <label className="block font-medium text-[#0A0A0A] mb-1">
               Petición de Oración / Observación Pastoral
             </label>
             <textarea
@@ -263,21 +263,21 @@ export const NewPersonModal: React.FC<NewPersonModalProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Motivo de oración, necesidades de la familia, fecha de bienvenida..."
-              className="w-full px-3 py-2 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg focus:outline-none focus:border-[#4F46E5] text-[#0F172A]"
+              className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
             />
           </div>
 
-          <div className="pt-4 border-t border-[#E2E8F0] flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-[#E8E8E8] flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-[#64748B] hover:text-[#0F172A]"
+              className="px-4 py-2 text-xs font-medium text-[#6B6B6B] hover:text-[#0A0A0A]"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-5 py-2 bg-[#4F46E5] hover:bg-[#4338CA] text-[#F6F8FB] text-xs font-medium rounded-lg shadow-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-5 py-2 bg-[#EA580C] hover:bg-[#C2410C] text-[#FAFAFA] text-xs font-medium rounded-lg shadow-xs transition-colors cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Guardar en el Padrón Fraterno</span>

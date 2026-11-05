@@ -24,19 +24,19 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E2E8F0] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8E8E8] shadow-xs">
         <div>
-          <h1 className="text-lg font-serif font-bold text-[#0F172A] flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5 text-[#4F46E5]" />
+          <h1 className="text-lg font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-[#EA580C]" />
             Registro Fraterno & Asistencia Semanal
           </h1>
-          <p className="text-xs text-[#64748B] mt-0.5">
+          <p className="text-xs text-[#6B6B6B] mt-0.5">
             Planillas de comunión por grupo de discipulado con actualización inmediata de inasistencias y alertas.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-[#16A34A] bg-[#F6F8FB] border border-[#BBF7D0] px-3 py-1 rounded-full flex items-center gap-1">
+          <span className="text-xs font-medium text-[#16A34A] bg-[#FAFAFA] border border-[#BBF7D0] px-3 py-1 rounded-full flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" /> 84.6% Perseverancia Promedio
           </span>
         </div>
@@ -48,34 +48,34 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         onSaveAttendance={onSaveAttendance}
       />
 
-      <div className="bg-white p-4.5 rounded-xl border border-[#E2E8F0] shadow-xs">
-        <h2 className="text-sm font-serif font-bold text-[#0F172A] mb-3 flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-[#4F46E5]" />
+      <div className="bg-white p-4.5 rounded-xl border border-[#E8E8E8] shadow-xs">
+        <h2 className="text-sm font-serif font-bold text-[#0A0A0A] mb-3 flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-[#EA580C]" />
           Perseverancia por Grupo (Últimas 4 Semanas)
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {groups.map((grp) => (
-            <div key={grp.id} className="p-3 bg-[#F6F8FB] rounded-xl border border-[#E2E8F0] text-xs">
+            <div key={grp.id} className="p-3 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8] text-xs">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-serif font-bold text-[#0F172A] truncate">{grp.name}</span>
+                <span className="font-serif font-bold text-[#0A0A0A] truncate">{grp.name}</span>
                 <span className={`font-serif font-bold ${
                   grp.averageAttendanceRate >= 85 ? 'text-[#16A34A]' :
-                  grp.averageAttendanceRate >= 75 ? 'text-[#D97706]' : 'text-[#DC2626]'
+                  grp.averageAttendanceRate >= 75 ? 'text-[#CA8A04]' : 'text-[#DC2626]'
                 }`}>
                   {grp.averageAttendanceRate}%
                 </span>
               </div>
-              <div className="w-full bg-[#E2E8F0] h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-[#E8E8E8] h-2 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full ${
                     grp.averageAttendanceRate >= 85 ? 'bg-[#16A34A]' :
-                    grp.averageAttendanceRate >= 75 ? 'bg-[#D97706]' : 'bg-[#DC2626]'
+                    grp.averageAttendanceRate >= 75 ? 'bg-[#CA8A04]' : 'bg-[#DC2626]'
                   }`}
                   style={{ width: `${grp.averageAttendanceRate}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-[10px] text-[#64748B] mt-1.5">
+              <div className="flex items-center justify-between text-[10px] text-[#6B6B6B] mt-1.5">
                 <span>{grp.zone}</span>
                 <span>{grp.memberCount} hermanos</span>
               </div>

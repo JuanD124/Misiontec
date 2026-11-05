@@ -200,157 +200,6 @@ CREATE INDEX ix_grupo_ubicacion     ON grupo (latitud, longitud);
 CREATE INDEX ix_sesion_fecha        ON sesion_asistencia (fecha);
 CREATE INDEX ix_evento_fecha        ON evento (fecha);
 
-DELIMITER $$
-
-CREATE FUNCTION fn_distancia_km(lat1 DECIMAL(10,7), lon1 DECIMAL(10,7),
-                                lat2 DECIMAL(10,7), lon2 DECIMAL(10,7))
-RETURNS DECIMAL(10,2)
-DETERMINISTIC
-BEGIN
-  DECLARE r DOUBLE DEFAULT 6371;
-  DECLARE dlat DOUBLE;
-  DECLARE dlon DOUBLE;
-  DECLARE a DOUBLE;
-  SET dlat = RADIANS(lat2 - lat1);
-  SET dlon = RADIANS(lon2 - lon1);
-  SET a = SIN(dlat/2) * SIN(dlat/2)
-        + COS(RADIANS(lat1)) * COS(RADIANS(lat2)) * SIN(dlon/2) * SIN(dlon/2);
-  RETURN ROUND(r * 2 * ATAN2(SQRT(a), SQRT(1 - a)), 2);
-END$$
-
-CREATE PROCEDURE sp_grupos_cercanos(IN p_lat DECIMAL(10,7), IN p_lon DECIMAL(10,7),
-                                    IN p_radio_km DECIMAL(6,2))
-BEGIN
-  SELECT g.id_grupo, g.codigo, g.nombre, g.direccion, g.barrio,
-         g.dia_reunion, g.hora_reunion,
-         fn_distancia_km(p_lat, p_lon, g.latitud, g.longitud) AS distancia_km
-  FROM grupo g
-  WHERE g.activo = 1
-    AND fn_distancia_km(p_lat, p_lon, g.latitud, g.longitud) <= p_radio_km
-  ORDER BY distancia_km;
-END$$
-
-CREATE PROCEDURE sp_desactivar_persona(IN p_id_persona INT UNSIGNED)
-BEGIN
-  UPDATE persona SET activo = 0 WHERE id_persona = p_id_persona;
-END$$
-
-DELIMITER ;
-
-CREATE VIEW vw_inasistencias_consecutivas AS
-SELECT p.id_persona,
-       (SELECT COUNT(*)
-          FROM detalle_asistencia d
-          JOIN sesion_asistencia s ON s.id_sesion = d.id_sesion
-         WHERE d.id_persona = p.id_persona
-           AND d.estado <> 'presente'
-           AND s.fecha > COALESCE((SELECT MAX(s2.fecha)
-                                     FROM detalle_asistencia d2
-                                     JOIN sesion_asistencia s2 ON s2.id_sesion = d2.id_sesion
-                                    WHERE d2.id_persona = p.id_persona
-                                      AND d2.estado = 'presente'), '1900-01-01')
-       ) AS faltas_consecutivas,
-       (SELECT MAX(s3.fecha)
-          FROM detalle_asistencia d3
-          JOIN sesion_asistencia s3 ON s3.id_sesion = d3.id_sesion
-         WHERE d3.id_persona = p.id_persona AND d3.estado = 'presente'
-       ) AS ultima_asistencia
-FROM persona p
-WHERE p.activo = 1;
-
-CREATE VIEW vw_semaforo_persona AS
-SELECT p.id_persona,
-       p.codigo,
-       CONCAT(p.nombres, ' ', p.apellidos) AS nombre_completo,
-       g.nombre                            AS grupo,
-       p.fase                              AS fase,
-       CONCAT(m.nombres, ' ', m.apellidos) AS mentor,
-       i.faltas_consecutivas,
-       i.ultima_asistencia,
-       CASE
-         WHEN i.faltas_consecutivas >= 3 THEN 'rojo'
-         WHEN i.faltas_consecutivas = 2  THEN 'amarillo'
-         ELSE 'verde'
-       END COLLATE utf8mb4_spanish_ci AS semaforo
-FROM persona p
-JOIN vw_inasistencias_consecutivas i ON i.id_persona = p.id_persona
-LEFT JOIN grupo g                    ON g.id_grupo = p.id_grupo
-LEFT JOIN persona m                  ON m.id_persona = p.id_mentor
-WHERE p.activo = 1;
-
-CREATE VIEW vw_indicadores_grupo AS
-SELECT g.id_grupo,
-       g.codigo,
-       g.nombre,
-       z.nombre AS zona,
-       d.nombre AS distrito,
-       CONCAT(l.nombres, ' ', l.apellidos) AS lider,
-       g.estado,
-       (SELECT COUNT(*) FROM persona p WHERE p.id_grupo = g.id_grupo AND p.activo = 1) AS total_miembros,
-       (SELECT COUNT(*) FROM sesion_asistencia s WHERE s.id_grupo = g.id_grupo) AS total_sesiones,
-       (SELECT ROUND(100 * SUM(da.estado = 'presente') / NULLIF(COUNT(*), 0), 1)
-          FROM detalle_asistencia da
-          JOIN sesion_asistencia s ON s.id_sesion = da.id_sesion
-         WHERE s.id_grupo = g.id_grupo) AS porcentaje_asistencia
-FROM grupo g
-JOIN zona z      ON z.id_zona = g.id_zona
-JOIN distrito d  ON d.id_distrito = z.id_distrito
-LEFT JOIN persona l ON l.id_persona = g.id_lider
-WHERE g.activo = 1;
-
-CREATE VIEW vw_personas_por_fase AS
-SELECT f.orden, f.fase, COUNT(p.id_persona) AS total_personas
-FROM (SELECT 1 AS orden, 'contacto' AS fase
-      UNION ALL SELECT 2, 'consolidacion'
-      UNION ALL SELECT 3, 'formacion'
-      UNION ALL SELECT 4, 'liderazgo') f
-LEFT JOIN persona p ON p.fase = f.fase COLLATE utf8mb4_spanish_ci AND p.activo = 1
-GROUP BY f.orden, f.fase;
-
-CREATE VIEW vw_dashboard AS
-SELECT
-  (SELECT COUNT(*) FROM persona WHERE activo = 1)                          AS personas_activas,
-  (SELECT COUNT(*) FROM grupo   WHERE activo = 1)                          AS grupos_activos,
-  (SELECT ROUND(AVG(porcentaje_asistencia), 1) FROM vw_indicadores_grupo)  AS asistencia_promedio,
-  (SELECT COUNT(*) FROM vw_semaforo_persona WHERE semaforo = 'rojo')       AS personas_en_rojo,
-  (SELECT COUNT(*) FROM vw_semaforo_persona WHERE semaforo = 'amarillo')   AS personas_en_amarillo,
-  (SELECT COUNT(*) FROM persona
-    WHERE activo = 1 AND fecha_ingreso >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)) AS nuevos_ultimos_90_dias,
-  (SELECT COUNT(*) FROM evento
-    WHERE activo = 1 AND estado = 'programado' AND fecha >= CURDATE())     AS eventos_proximos;
-
-DELIMITER $$
-
-CREATE TRIGGER trg_persona_bu BEFORE UPDATE ON persona
-FOR EACH ROW
-BEGIN
-  IF NEW.id_mentor IS NOT NULL AND NEW.id_mentor = NEW.id_persona THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Una persona no puede ser su propio mentor';
-  END IF;
-END$$
-
-CREATE TRIGGER trg_persona_ai AFTER INSERT ON persona
-FOR EACH ROW
-BEGIN
-  INSERT INTO historial_discipulado (id_persona, fase, fecha_inicio, observaciones)
-  VALUES (NEW.id_persona, NEW.fase, NEW.fecha_ingreso, 'Registro inicial');
-END$$
-
-CREATE TRIGGER trg_persona_au AFTER UPDATE ON persona
-FOR EACH ROW
-BEGIN
-  IF NEW.fase <> OLD.fase THEN
-    UPDATE historial_discipulado
-       SET fecha_fin = CURDATE()
-     WHERE id_persona = NEW.id_persona AND fecha_fin IS NULL;
-
-    INSERT INTO historial_discipulado (id_persona, fase, fecha_inicio, observaciones)
-    VALUES (NEW.id_persona, NEW.fase, CURDATE(), 'Cambio de fase');
-  END IF;
-END$$
-
-DELIMITER ;
-
 INSERT INTO distrito (nombre, descripcion) VALUES
  ('Distrito Villavicencio Norte', 'Comunas del norte de la ciudad'),
  ('Distrito Villavicencio Sur',   'Comunas del sur de la ciudad');
@@ -398,6 +247,9 @@ INSERT INTO persona (codigo, tipo_documento, numero_documento, nombres, apellido
  ('MT-0016','CC','1121800116','Julián',       'Méndez Castaño', '1996-11-28','M','3201234516','julian.mendez@correo.com',    'Cl 61 Sur # 17-40','Porfía',  'consolidacion','2025-04-15',1,'2026-02-01 09:00:00'),
  ('MT-0017','CC','1121800117','Diana Marcela','Pulido Reyes',   '1991-02-14','F','3201234517','diana.pulido@correo.com',     'Cl 59 Sur # 19-09','Porfía',  'formacion','2024-03-30',1,'2026-02-01 09:20:00'),
  ('MT-0018','CC','1121800118','Sebastián',    'Acosta Vela',    '2000-09-01','M','3201234518','sebastian.acosta@correo.com', 'Cra 13 # 11-50','La Esperanza','contacto','2026-09-06',1,'2026-09-06 17:00:00');
+
+INSERT INTO historial_discipulado (id_persona, fase, fecha_inicio, observaciones)
+SELECT id_persona, fase, fecha_ingreso, 'Registro inicial' FROM persona;
 
 INSERT INTO grupo (codigo, nombre, id_zona, id_lider, id_asistente, direccion, barrio, latitud, longitud,
                    dia_reunion, hora_reunion, estado, fecha_apertura) VALUES

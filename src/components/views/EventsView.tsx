@@ -23,27 +23,27 @@ export const EventsView: React.FC<EventsViewProps> = ({ events }) => {
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'vigilia':
-        return <span className="bg-[#F6F8FB] text-[#4338CA] border border-[#E2E8F0] px-2 py-0.5 rounded text-[10px] font-medium">Vigilia de Oración</span>;
+        return <span className="bg-[#FAFAFA] text-[#C2410C] border border-[#E8E8E8] px-2 py-0.5 rounded text-[10px] font-medium">Vigilia de Oración</span>;
       case 'taller':
-        return <span className="bg-[#F6F8FB] text-[#4F46E5] border border-[#E2E8F0] px-2 py-0.5 rounded text-[10px] font-medium">Taller Formativo</span>;
+        return <span className="bg-[#FAFAFA] text-[#EA580C] border border-[#E8E8E8] px-2 py-0.5 rounded text-[10px] font-medium">Taller Formativo</span>;
       case 'evangelismo':
         return <span className="bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0] px-2 py-0.5 rounded text-[10px] font-medium">Misión & Evangelismo</span>;
       case 'retiro':
-        return <span className="bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] px-2 py-0.5 rounded text-[10px] font-medium">Retiro Espiritual</span>;
+        return <span className="bg-[#FEF9C3] text-[#854D0E] border border-[#FEF08A] px-2 py-0.5 rounded text-[10px] font-medium">Retiro Espiritual</span>;
       default:
-        return <span className="bg-[#F6F8FB] text-[#64748B] border border-[#E2E8F0] px-2 py-0.5 rounded text-[10px] font-medium">Convocatoria</span>;
+        return <span className="bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8] px-2 py-0.5 rounded text-[10px] font-medium">Convocatoria</span>;
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E2E8F0] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8E8E8] shadow-xs">
         <div>
-          <h1 className="text-lg font-serif font-bold text-[#0F172A] flex items-center gap-2">
-            <CalendarDays className="w-5 h-5 text-[#4F46E5]" />
+          <h1 className="text-lg font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-[#EA580C]" />
             Convocatorias & Encuentros de la Comunidad
           </h1>
-          <p className="text-xs text-[#64748B] mt-0.5">
+          <p className="text-xs text-[#6B6B6B] mt-0.5">
             Planificación de jornadas de oración, talleres de discipulado, vigilias y retiros pastorales.
           </p>
         </div>
@@ -52,7 +52,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ events }) => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-1.5 bg-[#F6F8FB] border border-[#D8DFEA] rounded-lg text-xs font-medium text-[#0F172A] focus:outline-none"
+            className="px-3 py-1.5 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg text-xs font-medium text-[#0A0A0A] focus:outline-none"
           >
             <option value="all">Todas las Convocatorias</option>
             <option value="vigilia">Vigilias de Oración</option>
@@ -67,37 +67,37 @@ export const EventsView: React.FC<EventsViewProps> = ({ events }) => {
         {filteredEvents.map((evt) => (
           <div 
             key={evt.id}
-            className="p-5 bg-white rounded-xl border border-[#E2E8F0] shadow-xs hover:border-[#94A3B8] transition-all flex flex-col justify-between"
+            className="p-5 bg-white rounded-xl border border-[#E8E8E8] shadow-xs hover:border-[#A3A3A3] transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-2 mb-2">
                 {getTypeBadge(evt.type)}
-                <span className="text-[10px] font-mono font-medium bg-[#F6F8FB] text-[#64748B] border border-[#E2E8F0] px-2 py-0.5 rounded">
+                <span className="text-[10px] font-mono font-medium bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8] px-2 py-0.5 rounded">
                   {evt.status.toUpperCase()}
                 </span>
               </div>
 
-              <h3 className="text-sm font-serif font-bold text-[#0F172A] mb-3 leading-snug">
+              <h3 className="text-sm font-serif font-bold text-[#0A0A0A] mb-3 leading-snug">
                 {evt.title}
               </h3>
 
-              <div className="space-y-1.5 text-xs text-[#334155]">
-                <p className="flex items-center gap-2 text-[#0F172A] font-medium">
-                  <Calendar className="w-4 h-4 text-[#4F46E5] shrink-0" />
+              <div className="space-y-1.5 text-xs text-[#404040]">
+                <p className="flex items-center gap-2 text-[#0A0A0A] font-medium">
+                  <Calendar className="w-4 h-4 text-[#EA580C] shrink-0" />
                   <span>{evt.date} • {evt.time}</span>
                 </p>
-                <p className="flex items-center gap-2 text-[#64748B]">
-                  <MapPin className="w-4 h-4 text-[#7B8BA3] shrink-0" />
+                <p className="flex items-center gap-2 text-[#6B6B6B]">
+                  <MapPin className="w-4 h-4 text-[#8A8A8A] shrink-0" />
                   <span>{evt.location}</span>
                 </p>
-                <p className="flex items-center gap-2 text-[#64748B]">
-                  <Users className="w-4 h-4 text-[#7B8BA3] shrink-0" />
-                  <span>Audiencia: <strong className="text-[#0F172A]">{evt.targetAudience}</strong></span>
+                <p className="flex items-center gap-2 text-[#6B6B6B]">
+                  <Users className="w-4 h-4 text-[#8A8A8A] shrink-0" />
+                  <span>Audiencia: <strong className="text-[#0A0A0A]">{evt.targetAudience}</strong></span>
                 </p>
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#EEF2F7] flex items-center justify-between">
+            <div className="mt-4 pt-3 border-t border-[#F2F2F2] flex items-center justify-between">
               <span className="text-xs font-medium text-[#16A34A] flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {evt.attendeesCount} Hermanos confirmados
@@ -105,7 +105,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ events }) => {
 
               <button
                 onClick={() => alert(`Inscripción a ${evt.title} registrada.`)}
-                className="px-3 py-1.5 bg-[#F6F8FB] hover:bg-[#EEF2F7] text-[#4F46E5] border border-[#D8DFEA] rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-[#FAFAFA] hover:bg-[#F2F2F2] text-[#EA580C] border border-[#E0E0E0] rounded-lg text-xs font-medium transition-colors cursor-pointer"
               >
                 Inscribir Grupo
               </button>

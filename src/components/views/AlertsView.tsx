@@ -23,13 +23,13 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E2E8F0] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8E8E8] shadow-xs">
         <div>
-          <h1 className="text-lg font-serif font-bold text-[#0F172A] flex items-center gap-2">
+          <h1 className="text-lg font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
             <AlertOctagon className="w-5 h-5 text-[#DC2626]" />
             Cuidado Fraterno & Atención de Alertas Pastorales
           </h1>
-          <p className="text-xs text-[#64748B] mt-0.5">
+          <p className="text-xs text-[#6B6B6B] mt-0.5">
             Acompañamiento prioritario para hermanos con ausencias consecutivas a su grupo.
           </p>
         </div>
@@ -58,7 +58,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
                 <div>
                   <button
                     onClick={() => onOpenPersonDetail(p)}
-                    className="font-medium text-[#0F172A] hover:text-[#B91C1C] text-left"
+                    className="font-medium text-[#0A0A0A] hover:text-[#B91C1C] text-left"
                   >
                     {p.fullName}
                   </button>
@@ -76,31 +76,31 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
           </div>
         </div>
 
-        <div className="p-4 bg-[#F8FAFC] border border-[#FDE68A] rounded-xl">
-          <h3 className="text-xs font-serif font-bold text-[#B45309] flex items-center gap-2 mb-1.5">
-            <Clock className="w-4 h-4 text-[#D97706]" />
+        <div className="p-4 bg-[#FAFAFA] border border-[#FEF08A] rounded-xl">
+          <h3 className="text-xs font-serif font-bold text-[#854D0E] flex items-center gap-2 mb-1.5">
+            <Clock className="w-4 h-4 text-[#CA8A04]" />
             Cuidado Preventivo (Semáforo Amarillo)
           </h3>
-          <p className="text-[11px] text-[#B45309]/90 mb-3">
+          <p className="text-[11px] text-[#854D0E]/90 mb-3">
             Hermanos con dos inasistencias consecutivas a su grupo.
           </p>
 
           <div className="space-y-2">
             {warningPeople.map(p => (
-              <div key={p.id} className="p-2.5 bg-white rounded-lg border border-[#FDE68A] flex items-center justify-between text-xs">
+              <div key={p.id} className="p-2.5 bg-white rounded-lg border border-[#FEF08A] flex items-center justify-between text-xs">
                 <div>
                   <button
                     onClick={() => onOpenPersonDetail(p)}
-                    className="font-medium text-[#0F172A] hover:text-[#B45309] text-left"
+                    className="font-medium text-[#0A0A0A] hover:text-[#854D0E] text-left"
                   >
                     {p.fullName}
                   </button>
-                  <p className="text-[10px] text-[#B45309] font-medium">{p.consecutiveAbsences} ausencias • {p.groupName}</p>
+                  <p className="text-[10px] text-[#854D0E] font-medium">{p.consecutiveAbsences} ausencias • {p.groupName}</p>
                 </div>
 
                 <button
                   onClick={() => onOpenPersonDetail(p)}
-                  className="px-2.5 py-1 bg-[#D97706] hover:bg-[#B45309] text-white rounded text-[11px] font-medium transition-colors cursor-pointer"
+                  className="px-2.5 py-1 bg-[#CA8A04] hover:bg-[#854D0E] text-white rounded text-[11px] font-medium transition-colors cursor-pointer"
                 >
                   Ver ficha
                 </button>

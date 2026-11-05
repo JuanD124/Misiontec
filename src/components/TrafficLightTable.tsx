@@ -44,13 +44,13 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
   const getPhaseBadge = (phase: DiscipleshipPhase) => {
     switch(phase) {
       case 'contacto':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#EEF2FF] text-[#4338CA] border border-[#E2E8F0]">1. Bienvenida</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#FFF7ED] text-[#C2410C] border border-[#E8E8E8]">1. Bienvenida</span>;
       case 'consolidacion':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]">2. Consolidación</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#FEF9C3] text-[#854D0E] border border-[#FEF08A]">2. Consolidación</span>;
       case 'formacion':
         return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">3. Formación</span>;
       case 'liderazgo':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#EEF2FF] text-[#4F46E5] border border-[#D8DFEA]">4. Liderazgo</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#FFF7ED] text-[#EA580C] border border-[#E0E0E0]">4. Liderazgo</span>;
     }
   };
 
@@ -65,8 +65,8 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
         );
       case 'yellow':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]">
-            <Clock className="w-3 h-3 text-[#D97706]" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF9C3] text-[#854D0E] border border-[#FEF08A]">
+            <Clock className="w-3 h-3 text-[#CA8A04]" />
             Seguimiento ({absences} faltas)
           </span>
         );
@@ -81,30 +81,30 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
   };
 
   return (
-    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-xs overflow-hidden">
-      <div className="p-4.5 border-b border-[#E2E8F0] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="bg-white border border-[#E8E8E8] rounded-xl shadow-xs overflow-hidden">
+      <div className="p-4.5 border-b border-[#E8E8E8] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-serif font-bold text-[#0F172A] flex items-center gap-2">
-              <HeartHandshake className="w-5 h-5 text-[#4F46E5]" />
+            <h2 className="text-base font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
+              <HeartHandshake className="w-5 h-5 text-[#EA580C]" />
               Cuidado Pastoral & Acompañamiento del Rebaño
             </h2>
-            <span className="text-xs bg-[#F6F8FB] text-[#64748B] border border-[#E2E8F0] px-2 py-0.5 rounded font-medium">
+            <span className="text-xs bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8] px-2 py-0.5 rounded font-medium">
               {filteredPeople.length} hermanos
             </span>
           </div>
-          <p className="text-xs text-[#64748B] mt-0.5">
+          <p className="text-xs text-[#6B6B6B] mt-0.5">
             Atención preventiva ante inasistencias en grupos para fortalecer la perseverancia espiritual.
           </p>
         </div>
 
-        <div className="flex items-center gap-1 bg-[#F6F8FB] border border-[#E2E8F0] p-1 rounded-lg self-start md:self-auto">
+        <div className="flex items-center gap-1 bg-[#FAFAFA] border border-[#E8E8E8] p-1 rounded-lg self-start md:self-auto">
           <button
             onClick={() => onStatusFilterChange('all')}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
               statusFilter === 'all'
-                ? 'bg-[#4F46E5] text-[#F6F8FB] shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A]'
+                ? 'bg-[#EA580C] text-[#FAFAFA] shadow-xs'
+                : 'text-[#6B6B6B] hover:text-[#0A0A0A]'
             }`}
           >
             Todos ({people.length})
@@ -124,11 +124,11 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
             onClick={() => onStatusFilterChange('yellow')}
             className={`px-2.5 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
               statusFilter === 'yellow'
-                ? 'bg-[#D97706] text-white shadow-xs'
-                : 'text-[#B45309] hover:bg-[#FEF3C7]'
+                ? 'bg-[#CA8A04] text-white shadow-xs'
+                : 'text-[#854D0E] hover:bg-[#FEF9C3]'
             }`}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#CA8A04]" />
             Seguimiento ({yellowCount})
           </button>
           <button
@@ -145,27 +145,27 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
         </div>
       </div>
 
-      <div className="px-4.5 py-2.5 bg-[#F6F8FB] border-b border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="px-4.5 py-2.5 bg-[#FAFAFA] border-b border-[#E8E8E8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="w-3.5 h-3.5 text-[#7B8BA3] absolute left-2.5 top-2.5 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-[#8A8A8A] absolute left-2.5 top-2.5 pointer-events-none" />
           <input
             type="text"
             placeholder="Filtrar por nombre o grupo..."
             value={tableSearch}
             onChange={(e) => setTableSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#D8DFEA] rounded-lg text-xs text-[#0F172A] focus:outline-none focus:border-[#4F46E5] placeholder:text-[#94A3B8]"
+            className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E0E0E0] rounded-lg text-xs text-[#0A0A0A] focus:outline-none focus:border-[#EA580C] placeholder:text-[#A3A3A3]"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[#64748B] font-medium flex items-center gap-1">
-            <Filter className="w-3 h-3 text-[#7B8BA3]" />
+          <span className="text-xs text-[#6B6B6B] font-medium flex items-center gap-1">
+            <Filter className="w-3 h-3 text-[#8A8A8A]" />
             Fase:
           </span>
           <select
             value={selectedPhase}
             onChange={(e) => setSelectedPhase(e.target.value as any)}
-            className="bg-white border border-[#D8DFEA] text-xs text-[#0F172A] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#4F46E5]"
+            className="bg-white border border-[#E0E0E0] text-xs text-[#0A0A0A] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#EA580C]"
           >
             <option value="all">Todas las Fases</option>
             <option value="contacto">1. Bienvenida</option>
@@ -178,7 +178,7 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-[#F6F8FB] text-[#64748B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E2E8F0]">
+          <thead className="bg-[#FAFAFA] text-[#6B6B6B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8E8E8]">
             <tr>
               <th className="py-3 px-4.5">Hermano / Código</th>
               <th className="py-3 px-4.5">Grupo de Discipulado</th>
@@ -189,10 +189,10 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
               <th className="py-3 px-4.5 text-right">Ficha</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#EEF2F7]">
+          <tbody className="divide-y divide-[#F2F2F2]">
             {filteredPeople.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-[#7B8BA3] italic">
+                <td colSpan={7} className="py-8 text-center text-[#8A8A8A] italic">
                   No se encontraron registros con los filtros seleccionados.
                 </td>
               </tr>
@@ -204,7 +204,7 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                 return (
                   <tr 
                     key={person.id}
-                    className={`hover:bg-[#F6F8FB] transition-colors ${
+                    className={`hover:bg-[#FAFAFA] transition-colors ${
                       isRed ? 'bg-[#FEF2F2]' : ''
                     }`}
                   >
@@ -212,27 +212,27 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                       <div className="flex items-center gap-2.5">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 text-white ${
                           isRed ? 'bg-[#DC2626]' :
-                          isYellow ? 'bg-[#D97706]' : 'bg-[#16A34A]'
+                          isYellow ? 'bg-[#CA8A04]' : 'bg-[#16A34A]'
                         }`}>
                           {person.fullName.charAt(0)}
                         </div>
                         <div>
                           <button
                             onClick={() => onOpenPersonDetailModal(person)}
-                            className="font-medium text-[#0F172A] hover:text-[#4F46E5] text-left block"
+                            className="font-medium text-[#0A0A0A] hover:text-[#EA580C] text-left block"
                           >
                             {person.fullName}
                           </button>
-                          <span className="text-[10px] text-[#64748B]">
+                          <span className="text-[10px] text-[#6B6B6B]">
                             {person.code} • DNI: {person.dni}
                           </span>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3 px-4.5 text-[#334155]">
+                    <td className="py-3 px-4.5 text-[#404040]">
                       <p className="font-medium text-xs">{person.groupName}</p>
-                      <p className="text-[10px] text-[#64748B]">{person.district}</p>
+                      <p className="text-[10px] text-[#6B6B6B]">{person.district}</p>
                     </td>
 
                     <td className="py-3 px-4.5">
@@ -240,8 +240,8 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                     </td>
 
                     <td className="py-3 px-4.5">
-                      <div className="flex items-center gap-1.5 text-[#334155]">
-                        <Calendar className="w-3 h-3 text-[#7B8BA3]" />
+                      <div className="flex items-center gap-1.5 text-[#404040]">
+                        <Calendar className="w-3 h-3 text-[#8A8A8A]" />
                         <span>{person.lastAttendanceDate}</span>
                       </div>
                       {person.consecutiveAbsences > 0 ? (
@@ -257,10 +257,10 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                       {getStatusBadge(person.status, person.consecutiveAbsences)}
                     </td>
 
-                    <td className="py-3 px-4.5 text-[#334155]">
+                    <td className="py-3 px-4.5 text-[#404040]">
                       <p className="font-medium text-xs">{person.mentorName}</p>
-                      <p className="text-[10px] text-[#64748B] flex items-center gap-1">
-                        <Phone className="w-2.5 h-2.5 text-[#4F46E5]" /> {person.phone}
+                      <p className="text-[10px] text-[#6B6B6B] flex items-center gap-1">
+                        <Phone className="w-2.5 h-2.5 text-[#EA580C]" /> {person.phone}
                       </p>
                     </td>
 
@@ -268,7 +268,7 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => onOpenPersonDetailModal(person)}
-                          className="p-1.5 text-[#7B8BA3] hover:text-[#0F172A] rounded-lg hover:bg-[#F1F5F9]"
+                          className="p-1.5 text-[#8A8A8A] hover:text-[#0A0A0A] rounded-lg hover:bg-[#F5F5F5]"
                           title="Ver Ficha y Expediente"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -283,20 +283,20 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
         </table>
       </div>
 
-      <div className="p-3.5 bg-[#F6F8FB] border-t border-[#E2E8F0] text-[11px] text-[#64748B] flex flex-wrap items-center justify-between gap-2">
+      <div className="p-3.5 bg-[#FAFAFA] border-t border-[#E8E8E8] text-[11px] text-[#6B6B6B] flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-4 flex-wrap">
-          <span className="font-semibold text-[#0F172A]">Criterios de Cuidado Pastoral:</span>
+          <span className="font-semibold text-[#0A0A0A]">Criterios de Cuidado Pastoral:</span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-            <strong className="text-[#0F172A]">Comunión:</strong> Asistencia continua (&lt;2 faltas).
+            <strong className="text-[#0A0A0A]">Comunión:</strong> Asistencia continua (&lt;2 faltas).
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#D97706]" />
-            <strong className="text-[#0F172A]">Seguimiento:</strong> 2 inasistencias consecutivas.
+            <span className="w-2 h-2 rounded-full bg-[#CA8A04]" />
+            <strong className="text-[#0A0A0A]">Seguimiento:</strong> 2 inasistencias consecutivas.
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
-            <strong className="text-[#0F172A]">Atención Urgente:</strong> 3+ inasistencias consecutivas.
+            <strong className="text-[#0A0A0A]">Atención Urgente:</strong> 3+ inasistencias consecutivas.
           </span>
         </div>
       </div>

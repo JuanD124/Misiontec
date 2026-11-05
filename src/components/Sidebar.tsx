@@ -52,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badgeColor: 'bg-[#DC2626] text-white'
     },
     { id: 'eventos', label: 'Encuentros & Misiones', icon: Calendar, badge: null },
-    { id: 'reportes', label: 'Libro de Actas & Informes', icon: FileText, badge: null },
+    { id: 'reportes', label: 'Informes', icon: FileText, badge: null },
   ];
 
   const navItems = todosLosItems.filter((item) => {
@@ -63,29 +63,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside 
       id="main-sidebar"
-      className="w-68 bg-[#0F172A] text-[#F6F8FB] flex flex-col h-screen border-r border-[#1E293B] shrink-0 select-none z-30 transition-all"
+      className="w-68 bg-[#0A0A0A] text-[#FAFAFA] flex flex-col h-screen border-r border-[#262626] shrink-0 select-none z-30 transition-all"
     >
-      <div className="p-5 border-b border-[#1E293B]">
+      <div className="p-5 border-b border-[#262626]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] flex items-center justify-center text-[#A5B4FC] shadow-xs">
+          <div className="w-10 h-10 rounded-lg bg-[#262626] border border-[#404040] flex items-center justify-center text-[#FDBA74] shadow-xs">
             <Cross className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-serif text-lg font-bold tracking-wide text-white">MISION<span className="text-[#A5B4FC]">TEC</span></span>
+              <span className="font-serif text-lg font-bold tracking-wide text-white">MISION<span className="text-[#FDBA74]">TEC</span></span>
             </div>
-            <p className="text-[11px] text-[#CBD5E1] font-light tracking-wide italic">«Cuidado Pastoral & Misiones»</p>
+            <p className="text-[11px] text-[#D4D4D4] font-light tracking-wide italic">«Cuidado Pastoral & Misiones»</p>
           </div>
         </div>
       </div>
 
-      <div className="px-4 py-3 bg-[#0B1222] border-b border-[#1E293B]">
+      <div className="px-4 py-3 bg-[#000000] border-b border-[#262626]">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-medium uppercase tracking-widest text-[#94A3B8] flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#A5B4FC]" />
+          <span className="text-[10px] font-medium uppercase tracking-widest text-[#A3A3A3] flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#FDBA74]" />
             Ministerio / Rol
           </span>
-          <span className="text-[10px] bg-[#4F46E5] text-[#CBD5E1] px-1.5 py-0.5 rounded border border-[#475569]">
+          <span className="text-[10px] bg-[#EA580C] text-[#D4D4D4] px-1.5 py-0.5 rounded border border-[#525252]">
             Nivel {infoRol(activeRole).nivel}
           </span>
         </div>
@@ -93,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id="rbac-role-selector"
           value={activeRole}
           onChange={(e) => onRoleChange(e.target.value as UserRole)}
-          className="w-full bg-[#162033] border border-[#334155] text-xs text-[#F6F8FB] rounded-md px-2.5 py-1.5 focus:outline-none focus:border-[#A5B4FC] cursor-pointer font-medium"
+          className="w-full bg-[#1A1A1A] border border-[#404040] text-xs text-[#FAFAFA] rounded-md px-2.5 py-1.5 focus:outline-none focus:border-[#FDBA74] cursor-pointer font-medium"
         >
           {ROLES.map((r) => (
             <option key={r.clave} value={r.clave}$1>
@@ -101,11 +101,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </option>
           ))}
         </select>
-        <p className="mt-2 text-[10px] leading-snug text-[#94A3B8]">{infoRol(activeRole).descripcion}</p>
+        <p className="mt-2 text-[10px] leading-snug text-[#A3A3A3]">{infoRol(activeRole).descripcion}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#94A3B8]">
+        <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#A3A3A3]">
           Módulos
         </div>
         
@@ -119,19 +119,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onSelectView(item.id)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs transition-all ${
                 isActive
-                  ? 'bg-[#F6F8FB] text-[#0F172A] font-semibold shadow-xs'
-                  : 'text-[#D8DFEA] hover:text-white hover:bg-[#1E293B]'
+                  ? 'bg-[#FAFAFA] text-[#0A0A0A] font-semibold shadow-xs'
+                  : 'text-[#E0E0E0] hover:text-white hover:bg-[#262626]'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-[#4F46E5]' : 'text-[#94A3B8]'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-[#EA580C]' : 'text-[#A3A3A3]'}`} />
                 <span className="truncate">{item.label}</span>
               </div>
               
               {item.badge && (
                 <span 
                   className={`text-[10px] px-2 py-0.5 rounded-full font-medium leading-tight ${
-                    item.badgeColor || (isActive ? 'bg-[#E0E7FF] text-[#3730A3]' : 'bg-[#1E293B] text-[#D8DFEA]')
+                    item.badgeColor || (isActive ? 'bg-[#FFEDD5] text-[#9A3412]' : 'bg-[#262626] text-[#E0E0E0]')
                   }`}
                 >
                   {item.badge}
@@ -141,43 +141,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
 
-        <div className="pt-4 mt-3 border-t border-[#1E293B]">
+        <div className="pt-4 mt-3 border-t border-[#262626]">
           <button
             id="btn-open-sys-architecture"
             onClick={onOpenArchitectureModal}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium bg-[#162033] border border-[#334155] text-[#CBD5E1] hover:text-white hover:border-[#A5B4FC] transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium bg-[#1A1A1A] border border-[#404040] text-[#D4D4D4] hover:text-white hover:border-[#FDBA74] transition-colors"
           >
             <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#A5B4FC]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#FDBA74]" />
               <span>Ficha Técnica & Modelo</span>
             </div>
-            <Info className="w-3.5 h-3.5 text-[#94A3B8]" />
+            <Info className="w-3.5 h-3.5 text-[#A3A3A3]" />
           </button>
         </div>
       </div>
 
-      <div className="p-3 border-t border-[#1E293B] bg-[#0B1222]">
-        <div className="mb-2.5 px-2 py-1.5 rounded bg-[#162033] border border-[#263449]">
-          <p className="text-[10px] italic text-[#CBD5E1] leading-tight text-center">
+      <div className="p-3 border-t border-[#262626] bg-[#000000]">
+        <div className="mb-2.5 px-2 py-1.5 rounded bg-[#1A1A1A] border border-[#2E2E2E]">
+          <p className="text-[10px] italic text-[#D4D4D4] leading-tight text-center">
             «Apacienta mis ovejas»
-            <span className="block text-[9px] text-[#94A3B8] not-italic mt-0.5">— Juan 21:17</span>
+            <span className="block text-[9px] text-[#A3A3A3] not-italic mt-0.5">— Juan 21:17</span>
           </p>
         </div>
 
         <div className="flex items-center justify-between p-1.5 rounded-lg">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-[#334155] border border-[#475569] flex items-center justify-center text-xs font-bold text-[#F6F8FB]">
+            <div className="w-7 h-7 rounded-full bg-[#404040] border border-[#525252] flex items-center justify-center text-xs font-bold text-[#FAFAFA]">
               JD
             </div>
             <div className="min-w-0 text-left">
-              <p className="text-xs font-medium text-[#F6F8FB] truncate">Hno. Juan Diego</p>
-              <p className="text-[10px] text-[#94A3B8] truncate">{infoRol(activeRole).nombre}</p>
+              <p className="text-xs font-medium text-[#FAFAFA] truncate">Hno. Juan Diego</p>
+              <p className="text-[10px] text-[#A3A3A3] truncate">{infoRol(activeRole).nombre}</p>
             </div>
           </div>
           <button 
             id="btn-sidebar-logout"
             onClick={() => alert("Sesión demostrativa activa. Puede alternar roles en el menú superior para evaluar permisos.")}
-            className="p-1 text-[#94A3B8] hover:text-[#A5B4FC] rounded transition-colors" 
+            className="p-1 text-[#A3A3A3] hover:text-[#FDBA74] rounded transition-colors" 
             title="Cerrar sesión"
           >
             <LogOut className="w-3.5 h-3.5" />

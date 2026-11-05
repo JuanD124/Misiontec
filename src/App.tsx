@@ -37,7 +37,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [currentView, setCurrentView] = useState<string>('dashboard');
+  const [currentView, setCurrentView] = useState<string>(() => (window.location.hash === '#informe-general' ? 'reportes' : 'dashboard'));
   const [activeRole, setActiveRole] = useState<UserRole>('pastor');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [globalSearch, setGlobalSearch] = useState<string>('');
@@ -150,7 +150,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F8FB] text-[#334155] text-sm">
+      <div className="min-h-screen flex items-center justify-center bg-white text-[#404040] text-sm">
         Cargando información de MISIONTEC…
       </div>
     );
@@ -158,19 +158,19 @@ export default function App() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F8FB] p-6">
-        <div className="max-w-md bg-white border border-[#E2E8F0] rounded-xl p-6 text-sm text-[#0F172A] space-y-3">
+      <div className="min-h-screen flex items-center justify-center bg-white p-6">
+        <div className="max-w-md bg-white border border-[#E8E8E8] rounded-xl p-6 text-sm text-[#0A0A0A] space-y-3">
           <h2 className="font-bold text-base">No se pudo conectar con la base de datos</h2>
-          <p className="text-[#64748B]">{loadError}</p>
-          <p className="text-[#64748B]">Verifica que MySQL esté encendido, que el archivo .env tenga la contraseña correcta y que la API esté corriendo (npm run dev).</p>
-          <button onClick={() => { setLoading(true); loadData(); }} className="px-4 py-2 bg-[#4F46E5] text-white rounded-lg text-xs">Reintentar</button>
+          <p className="text-[#6B6B6B]">{loadError}</p>
+          <p className="text-[#6B6B6B]">Verifica que MySQL esté encendido, que el archivo .env tenga la contraseña correcta y que la API esté corriendo (npm run dev).</p>
+          <button onClick={() => { setLoading(true); loadData(); }} className="px-4 py-2 bg-[#EA580C] text-white rounded-lg text-xs">Reintentar</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#F6F8FB] text-[#0F172A] font-sans antialiased overflow-hidden">
+    <div id="app-root" className="flex h-screen w-full bg-white text-[#0A0A0A] font-sans antialiased overflow-hidden">
       <Sidebar
         currentView={currentView}
         onSelectView={(view) => setCurrentView(view)}
@@ -206,21 +206,21 @@ export default function App() {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 custom-scrollbar">
           {currentView === 'dashboard' && (
             <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-150">
-              <div className="p-4.5 bg-white border border-[#E2E8F0] rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4.5 bg-white border border-[#E8E8E8] rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-lg font-serif font-bold text-[#0F172A] tracking-tight">
+                  <h1 className="text-lg font-serif font-bold text-[#0A0A0A] tracking-tight">
                     MISIONTEC • Sistema Pastoral de Acompañamiento y Misión
                   </h1>
-                  <p className="text-xs text-[#64748B] mt-0.5">
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">
                     Consolidado de cobertura territorial, cuidado de hermanos en grupos y seguimiento discipular.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsArchitectureModalOpen(true)}
-                    className="px-3.5 py-1.5 bg-[#F6F8FB] hover:bg-[#EEF2F7] text-[#4F46E5] border border-[#D8DFEA] rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 bg-[#FAFAFA] hover:bg-[#F2F2F2] text-[#EA580C] border border-[#E0E0E0] rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
                   >
-                    <Info className="w-3.5 h-3.5 text-[#4F46E5]" />
+                    <Info className="w-3.5 h-3.5 text-[#EA580C]" />
                     <span>Ficha Pastoral & Arquitectura</span>
                   </button>
                 </div>
@@ -343,6 +343,7 @@ export default function App() {
           {currentView === 'reportes' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <ReportsView
+                rolActivo={infoRol(activeRole).nombre}
                 people={filteredPeople}
                 groups={filteredGroups}
               />
@@ -352,14 +353,14 @@ export default function App() {
       </div>
 
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#0F172A] text-[#F6F8FB] shadow-xl border border-[#4338CA] text-xs font-medium animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="no-print fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#0A0A0A] text-[#FAFAFA] shadow-xl border border-[#C2410C] text-xs font-medium animate-in fade-in slide-in-from-bottom-3 duration-200">
           {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-[#4ADE80] shrink-0" />}
-          {toastMessage.type === 'info' && <Info className="w-4 h-4 text-[#A5B4FC] shrink-0" />}
+          {toastMessage.type === 'info' && <Info className="w-4 h-4 text-[#FDBA74] shrink-0" />}
           {toastMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-[#F87171] shrink-0" />}
           <span>{toastMessage.text}</span>
           <button 
             onClick={() => setToastMessage(null)}
-            className="ml-2 text-[#94A3B8] hover:text-[#F6F8FB]"
+            className="ml-2 text-[#A3A3A3] hover:text-[#FAFAFA]"
           >
             <X className="w-3.5 h-3.5" />
           </button>
