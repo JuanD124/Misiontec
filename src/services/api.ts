@@ -1,23 +1,16 @@
 import type {
   Person,
   MissionaryGroup,
-  FollowUpRecord,
   NotificationItem,
   MissionEvent,
-  AuditLog,
   DiscipleshipPhase,
 } from '../types';
-
-
-let usuarioId = 1;
-export const setUsuarioActual = (id: number) => { usuarioId = id; };
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'x-usuario-id': String(usuarioId),
       ...(options.headers || {}),
     },
   });
@@ -29,10 +22,8 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
 export interface DatosIniciales {
   people: Person[];
   groups: MissionaryGroup[];
-  followUps: FollowUpRecord[];
   notifications: NotificationItem[];
   events: MissionEvent[];
-  auditLogs: AuditLog[];
 }
 
 export const api = {
@@ -44,11 +35,8 @@ export const api = {
   cambiarFase: (personId: string, phase: DiscipleshipPhase) =>
     request(`/api/personas/${personId}/fase`, { method: 'PATCH', body: JSON.stringify({ phase }) }),
 
-  desactivarPersona: (personId: string, motivo?: string) =>
-    request(`/api/personas/${personId}`, { method: 'DELETE', body: JSON.stringify({ motivo }) }),
-
-  registrarSeguimiento: (data: Omit<FollowUpRecord, 'id'>) =>
-    request('/api/seguimientos', { method: 'POST', body: JSON.stringify(data) }),
+  desactivarPersona: (personId: string) =>
+    request(`/api/personas/${personId}`, { method: 'DELETE' }),
 
   registrarAsistencia: (
     groupId: string,
@@ -56,8 +44,6 @@ export const api = {
     items: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>,
     topic?: string,
   ) => request('/api/asistencias', { method: 'POST', body: JSON.stringify({ groupId, date, items, topic }) }),
-
-  marcarAlertaLeida: (id: string) => request(`/api/alertas/${id}/leida`, { method: 'PATCH' }),
 
   gruposCercanos: (lat: number, lng: number, radioKm = 5) =>
     request<any[]>(`/api/grupos/cercanos?lat=${lat}&lng=${lng}&radio=${radioKm}`),

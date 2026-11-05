@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { 
-  MapPin, 
-  Navigation, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Users, 
-  Clock, 
-  X, 
+import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import {
+  MapPin,
+  Navigation,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Users,
+  Clock,
+  X,
   ExternalLink,
   Compass,
   Church
@@ -20,6 +22,41 @@ interface InteractiveMapProps {
   onQuickAttendanceForGroup?: (groupId: string) => void;
 }
 
+const MAPAS_BASE = {
+  streets: {
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; Colaboradores de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Imágenes &copy; Esri, Maxar, Earthstar Geographics',
+  },
+};
+
+const CENTRO_VILLAVICENCIO: L.LatLngTuple = [4.142, -73.626];
+
+const escapar = (texto: string) =>
+  texto.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+const colorGrupo = (grp: MissionaryGroup) => {
+  const critico = grp.status === 'watch' || grp.criticalMembersCount > 1;
+  if (critico) return '#DC2626';
+  return grp.averageAttendanceRate >= 85 ? '#16A34A' : '#D97706';
+};
+
+const iconoGrupo = (grp: MissionaryGroup, seleccionado: boolean) => {
+  const tam = seleccionado ? 36 : 30;
+  const sombra = seleccionado
+    ? '0 0 0 5px rgba(79,70,229,.3), 0 3px 8px rgba(15,23,42,.4)'
+    : '0 2px 6px rgba(15,23,42,.35)';
+  const html = `
+    <div style="position:relative;width:${tam}px;height:${tam}px">
+      <div style="width:${tam}px;height:${tam}px;border-radius:9999px;background:${colorGrupo(grp)};border:2px solid #fff;box-shadow:${sombra};display:flex;align-items:center;justify-content:center;color:#fff;font:700 12px 'Plus Jakarta Sans',system-ui,sans-serif">${grp.memberCount}</div>
+      <div style="position:absolute;left:50%;top:${tam + 3}px;transform:translateX(-50%);white-space:nowrap;text-align:center;font:600 10px 'Plus Jakarta Sans',system-ui,sans-serif;color:#0F172A;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff">${escapar(grp.code)}</div>
+    </div>`;
+  return L.divIcon({ html, className: '', iconSize: [tam, tam], iconAnchor: [tam / 2, tam / 2] });
+};
+
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   groups,
   onSelectGroup,
@@ -28,73 +65,137 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [selectedGroup, setSelectedGroup] = useState<MissionaryGroup | null>(groups[0] || null);
   const [searchRadiusKm, setSearchRadiusKm] = useState<number>(10);
   const [mapLayer, setMapLayer] = useState<'streets' | 'satellite' | 'heatmap'>('streets');
-  const [zoomLevel, setZoomLevel] = useState<number>(1);
-  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  const mapWidth = 800;
-  const mapHeight = 460;
+  const contenedorRef = useRef<HTMLDivElement>(null);
+  const mapaRef = useRef<L.Map | null>(null);
+  const baseRef = useRef<L.TileLayer | null>(null);
+  const capaRef = useRef<L.LayerGroup | null>(null);
+  const alSeleccionarRef = useRef(onSelectGroup);
+  alSeleccionarRef.current = onSelectGroup;
 
-  const lats = groups.map(g => g.lat);
-  const lngs = groups.map(g => g.lng);
-  const padLat = lats.length ? Math.max((Math.max(...lats) - Math.min(...lats)) * 0.2, 0.01) : 0.1;
-  const padLng = lngs.length ? Math.max((Math.max(...lngs) - Math.min(...lngs)) * 0.2, 0.01) : 0.1;
-  const minLat = lats.length ? Math.min(...lats) - padLat : 4.05;
-  const maxLat = lats.length ? Math.max(...lats) + padLat : 4.20;
-  const minLng = lngs.length ? Math.min(...lngs) - padLng : -73.70;
-  const maxLng = lngs.length ? Math.max(...lngs) + padLng : -73.55;
+  const idsGrupos = groups.map(g => g.id).join(',');
 
-  const latToY = (lat: number) => {
-    const ratio = (lat - minLat) / (maxLat - minLat);
-    return mapHeight - ratio * mapHeight;
+  const ajustarVista = () => {
+    const mapa = mapaRef.current;
+    if (!mapa) return;
+    if (groups.length === 0) {
+      mapa.setView(CENTRO_VILLAVICENCIO, 12);
+      return;
+    }
+    mapa.fitBounds(L.latLngBounds(groups.map(g => [g.lat, g.lng] as L.LatLngTuple)), {
+      padding: [70, 70],
+      maxZoom: 14,
+    });
   };
 
-  const lngToX = (lng: number) => {
-    const ratio = (lng - minLng) / (maxLng - minLng);
-    return ratio * mapWidth;
-  };
+  useEffect(() => {
+    if (!contenedorRef.current) return;
+    const mapa = L.map(contenedorRef.current, { zoomControl: false, attributionControl: false })
+      .setView(CENTRO_VILLAVICENCIO, 12);
+    L.control.attribution({ position: 'topleft', prefix: false }).addTo(mapa);
+    capaRef.current = L.layerGroup().addTo(mapa);
+    mapaRef.current = mapa;
+    return () => {
+      mapa.remove();
+      mapaRef.current = null;
+      baseRef.current = null;
+      capaRef.current = null;
+    };
+  }, []);
 
-  const radiusInPixels = (km: number) => {
-    const kmAncho = (maxLng - minLng) * 111 * Math.cos(((minLat + maxLat) / 2) * Math.PI / 180);
-    return km * (mapWidth / kmAncho) * zoomLevel;
-  };
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    if (!mapa) return;
+    baseRef.current?.remove();
+    const base = MAPAS_BASE[mapLayer === 'satellite' ? 'satellite' : 'streets'];
+    baseRef.current = L.tileLayer(base.url, { attribution: base.attribution, maxZoom: 19 }).addTo(mapa);
+  }, [mapLayer]);
 
-  const handlePinClick = (group: MissionaryGroup) => {
-    setSelectedGroup(group);
-    if (onSelectGroup) onSelectGroup(group);
-  };
+  useEffect(() => {
+    ajustarVista();
+  }, [idsGrupos]);
+
+  useEffect(() => {
+    const capa = capaRef.current;
+    if (!capa) return;
+    capa.clearLayers();
+
+    if (mapLayer === 'heatmap') {
+      groups.forEach((g) => {
+        L.circle([g.lat, g.lng], {
+          radius: 150 + g.memberCount * 70,
+          stroke: false,
+          fillColor: g.averageAttendanceRate > 85 ? '#16A34A' : g.averageAttendanceRate > 70 ? '#D97706' : '#DC2626',
+          fillOpacity: 0.4,
+          interactive: false,
+        }).addTo(capa);
+      });
+    }
+
+    if (selectedGroup) {
+      L.circle([selectedGroup.lat, selectedGroup.lng], {
+        radius: searchRadiusKm * 1000,
+        color: '#4F46E5',
+        weight: 1.5,
+        dashArray: '4 4',
+        fillColor: '#4F46E5',
+        fillOpacity: 0.07,
+        interactive: false,
+      }).addTo(capa);
+      L.circle([selectedGroup.lat, selectedGroup.lng], {
+        radius: searchRadiusKm * 500,
+        color: '#94A3B8',
+        weight: 1,
+        dashArray: '2 2',
+        fill: false,
+        interactive: false,
+      }).addTo(capa);
+    }
+
+    groups.forEach((grp) => {
+      L.marker([grp.lat, grp.lng], {
+        icon: iconoGrupo(grp, selectedGroup?.id === grp.id),
+        title: grp.name,
+      })
+        .on('click', () => {
+          setSelectedGroup(grp);
+          alSeleccionarRef.current?.(grp);
+        })
+        .addTo(capa);
+    });
+  }, [groups, selectedGroup, mapLayer, searchRadiusKm]);
 
   const resetView = () => {
-    setZoomLevel(1);
-    setPanOffset({ x: 0, y: 0 });
-    setSelectedGroup(groups[0]);
+    ajustarVista();
+    setSelectedGroup(groups[0] ?? null);
   };
 
   return (
-    <div className="bg-white border border-[#E8DFD7] rounded-xl shadow-xs overflow-hidden flex flex-col">
-      <div className="p-4.5 border-b border-[#E8DFD7] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-xs overflow-hidden flex flex-col">
+      <div className="p-4.5 border-b border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-serif font-bold text-[#2D1F17] flex items-center gap-2">
-              <Compass className="w-5 h-5 text-[#8C5D36]" />
-              Geolocalización de Células y Hogares de Oración
+            <h2 className="text-base font-serif font-bold text-[#0F172A] flex items-center gap-2">
+              <Compass className="w-5 h-5 text-[#4F46E5]" />
+              Geolocalización de Grupos de Discipulado
             </h2>
-            <span className="text-xs bg-[#FAF7F2] text-[#7D6B5E] border border-[#E8DFD7] font-medium px-2 py-0.5 rounded">
-              {groups.length} Células
+            <span className="text-xs bg-[#F6F8FB] text-[#64748B] border border-[#E2E8F0] font-medium px-2 py-0.5 rounded">
+              {groups.length} Grupos
             </span>
           </div>
-          <p className="text-xs text-[#7D6B5E] mt-0.5">
+          <p className="text-xs text-[#64748B] mt-0.5">
             Distribución territorial de puntos de reunión, cobertura pastoral y comunidades fraternas.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 bg-[#FAF7F2] border border-[#E0D4C7] px-2.5 py-1 rounded-lg text-xs">
-            <Navigation className="w-3.5 h-3.5 text-[#8C5D36]" />
-            <span className="text-[#7D6B5E] text-[11px]">Radio de Cobertura:</span>
+          <div className="flex items-center gap-1.5 bg-[#F6F8FB] border border-[#D8DFEA] px-2.5 py-1 rounded-lg text-xs">
+            <Navigation className="w-3.5 h-3.5 text-[#4F46E5]" />
+            <span className="text-[#64748B] text-[11px]">Radio de Cobertura:</span>
             <select
               value={searchRadiusKm}
               onChange={(e) => setSearchRadiusKm(Number(e.target.value))}
-              className="bg-transparent font-medium text-[#2D1F17] focus:outline-none text-xs cursor-pointer"
+              className="bg-transparent font-medium text-[#0F172A] focus:outline-none text-xs cursor-pointer"
             >
               <option value={2}>2 km (Barrial)</option>
               <option value={5}>5 km (Distrital)</option>
@@ -103,13 +204,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </select>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#FAF7F2] border border-[#E0D4C7] p-0.5 rounded-lg text-xs">
+          <div className="flex items-center gap-1 bg-[#F6F8FB] border border-[#D8DFEA] p-0.5 rounded-lg text-xs">
             <button
               onClick={() => setMapLayer('streets')}
               className={`px-2 py-1 rounded font-medium transition-colors ${
                 mapLayer === 'streets' 
-                  ? 'bg-white text-[#2D1F17] shadow-xs' 
-                  : 'text-[#7D6B5E] hover:text-[#2D1F17]'
+                  ? 'bg-white text-[#0F172A] shadow-xs' 
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
               Cartográfico
@@ -118,18 +219,18 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               onClick={() => setMapLayer('satellite')}
               className={`px-2 py-1 rounded font-medium transition-colors ${
                 mapLayer === 'satellite' 
-                  ? 'bg-white text-[#2D1F17] shadow-xs' 
-                  : 'text-[#7D6B5E] hover:text-[#2D1F17]'
+                  ? 'bg-white text-[#0F172A] shadow-xs' 
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
-              Territorial
+              Satélite
             </button>
             <button
               onClick={() => setMapLayer('heatmap')}
               className={`px-2 py-1 rounded font-medium transition-colors ${
                 mapLayer === 'heatmap' 
-                  ? 'bg-white text-[#2D1F17] shadow-xs' 
-                  : 'text-[#7D6B5E] hover:text-[#2D1F17]'
+                  ? 'bg-white text-[#0F172A] shadow-xs' 
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
               Densidad
@@ -138,255 +239,109 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         </div>
       </div>
 
-      <div className="relative w-full h-[380px] sm:h-[420px] bg-[#F7F3EC] overflow-hidden select-none border-b border-[#E8DFD7]">
-        <svg 
-          viewBox={`0 0 ${mapWidth} ${mapHeight}`} 
-          className="w-full h-full object-cover transition-transform duration-300"
-          style={{
-            transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
-            transformOrigin: 'center center'
-          }}
-        >
-          <defs>
-            <pattern id="grid-pattern-coffee" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E6DDD2" strokeWidth="0.75" />
-            </pattern>
-
-            <radialGradient id="radar-glow-coffee" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#8C5D36" stopOpacity="0.25" />
-              <stop offset="70%" stopColor="#8C5D36" stopOpacity="0.08" />
-              <stop offset="100%" stopColor="#8C5D36" stopOpacity="0.0" />
-            </radialGradient>
-
-            <filter id="heat-blur-coffee">
-              <feGaussianBlur stdDeviation="25" />
-            </filter>
-          </defs>
-
-          <rect width={mapWidth} height={mapHeight} fill={mapLayer === 'satellite' ? '#EFE9DE' : '#F7F3EC'} />
-          <rect width={mapWidth} height={mapHeight} fill="url(#grid-pattern-coffee)" />
-
-          <path
-            d="M 0,0 L 140,0 Q 180,120 160,220 T 130,340 Q 110,410 70,460 L 0,460 Z"
-            fill="#E2DBD0"
-            opacity="0.9"
-          />
-          <text x="35" y="240" fill="#998576" fontSize="11" opacity="0.6" transform="rotate(-75 35 240)" fontFamily="Cinzel, serif" letterSpacing="4">
-            OCÉANO PACÍFICO
-          </text>
-
-          <g stroke="#DDD3C5" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.8">
-            <path d="M 160,50 Q 280,180 320,320 T 360,460" stroke="#C7B8A6" strokeWidth="2" strokeDasharray="none" />
-            <path d="M 180,240 Q 380,220 540,260 T 780,290" stroke="#C7B8A6" strokeWidth="2" strokeDasharray="none" />
-            <path d="M 140,140 Q 260,110 400,90" />
-            <path d="M 170,280 Q 290,300 480,310" />
-            <path d="M 320,100 L 320,380" />
-            <path d="M 500,60 L 500,420" />
-          </g>
-
-          <text x="240" y="80" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">ZONA NORTE (Los Olivos)</text>
-          <text x="330" y="220" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">ZONA CENTRO (Jesús María)</text>
-          <text x="270" y="380" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">ZONA SUR (Chorrillos)</text>
-          <text x="560" y="160" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">ZONA ESTE (SJL)</text>
-          <text x="180" y="200" fill="#7D6B5E" fontSize="10" fontWeight="600" opacity="0.8" fontFamily="serif">CALLAO</text>
-
-          {mapLayer === 'heatmap' && (
-            <g filter="url(#heat-blur-coffee)">
-              {groups.map((g) => (
-                <circle
-                  key={`heat-${g.id}`}
-                  cx={lngToX(g.lng)}
-                  cy={latToY(g.lat)}
-                  r={g.memberCount * 2.2}
-                  fill={g.averageAttendanceRate > 85 ? '#486341' : g.averageAttendanceRate > 70 ? '#B38646' : '#9E382A'}
-                  opacity="0.45"
-                />
-              ))}
-            </g>
-          )}
-
-          {selectedGroup && (
-            <g>
-              <circle
-                cx={lngToX(selectedGroup.lng)}
-                cy={latToY(selectedGroup.lat)}
-                r={radiusInPixels(searchRadiusKm)}
-                fill="url(#radar-glow-coffee)"
-                stroke="#8C5D36"
-                strokeWidth="1.5"
-                strokeDasharray="4 4"
-              />
-              <circle
-                cx={lngToX(selectedGroup.lng)}
-                cy={latToY(selectedGroup.lat)}
-                r={radiusInPixels(searchRadiusKm) * 0.5}
-                fill="none"
-                stroke="#B8A18E"
-                strokeWidth="1"
-                strokeDasharray="2 2"
-                opacity="0.5"
-              />
-            </g>
-          )}
-
-          {groups.map((grp) => {
-            const x = lngToX(grp.lng);
-            const y = latToY(grp.lat);
-            const isSelected = selectedGroup?.id === grp.id;
-            const isCritical = grp.status === 'watch' || grp.criticalMembersCount > 1;
-
-            return (
-              <g 
-                key={grp.id} 
-                className="cursor-pointer"
-                onClick={() => handlePinClick(grp)}
-              >
-                {isSelected && (
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r="16"
-                    fill="none"
-                    stroke="#8C5D36"
-                    strokeWidth="1.5"
-                    className="animate-ping opacity-60"
-                  />
-                )}
-
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={isSelected ? "13" : "10"}
-                  fill={isCritical ? "#9E382A" : grp.averageAttendanceRate >= 85 ? "#486341" : "#B38646"}
-                  stroke="#FFFFFF"
-                  strokeWidth={isSelected ? "2" : "1.5"}
-                />
-
-                <text
-                  x={x}
-                  y={y + 3.5}
-                  fill="#FFFFFF"
-                  fontSize={isSelected ? "9" : "8"}
-                  fontWeight="600"
-                  textAnchor="middle"
-                >
-                  {grp.memberCount}
-                </text>
-
-                <text
-                  x={x}
-                  y={y - 14}
-                  fill="#2D1F17"
-                  fontSize="10"
-                  fontWeight="600"
-                  textAnchor="middle"
-                  className="pointer-events-none"
-                >
-                  {grp.name.split(' ')[0]} {grp.name.split(' ')[1] || ''}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+      <div className="relative w-full h-[420px] sm:h-[500px] bg-[#F1F5F9] overflow-hidden border-b border-[#E2E8F0]">
+        <div ref={contenedorRef} className="absolute inset-0 z-0" />
 
         <div className="absolute top-4 right-4 flex flex-col gap-1.5 z-10">
           <button
-            onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2.5))}
-            className="w-8 h-8 rounded-lg bg-white border border-[#E0D4C7] text-[#4A3425] hover:bg-[#FAF7F2] flex items-center justify-center shadow-xs transition-colors"
+            onClick={() => mapaRef.current?.zoomIn()}
+            className="w-8 h-8 rounded-lg bg-white border border-[#D8DFEA] text-[#334155] hover:bg-[#F6F8FB] flex items-center justify-center shadow-xs transition-colors"
             title="Acercar"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.75))}
-            className="w-8 h-8 rounded-lg bg-white border border-[#E0D4C7] text-[#4A3425] hover:bg-[#FAF7F2] flex items-center justify-center shadow-xs transition-colors"
+            onClick={() => mapaRef.current?.zoomOut()}
+            className="w-8 h-8 rounded-lg bg-white border border-[#D8DFEA] text-[#334155] hover:bg-[#F6F8FB] flex items-center justify-center shadow-xs transition-colors"
             title="Alejar"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={resetView}
-            className="w-8 h-8 rounded-lg bg-white border border-[#E0D4C7] text-[#4A3425] hover:bg-[#FAF7F2] flex items-center justify-center shadow-xs transition-colors"
+            className="w-8 h-8 rounded-lg bg-white border border-[#D8DFEA] text-[#334155] hover:bg-[#F6F8FB] flex items-center justify-center shadow-xs transition-colors"
             title="Centrar"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="absolute bottom-3 left-3 bg-white/95 border border-[#E8DFD7] rounded-lg p-2.5 backdrop-blur-xs text-[10px] text-[#7D6B5E] z-10 space-y-1.5 shadow-sm hidden sm:block">
-          <p className="font-semibold text-[#2D1F17] uppercase tracking-wider text-[9px]">Simbología de Células:</p>
+        <div className="absolute bottom-3 left-3 bg-white/95 border border-[#E2E8F0] rounded-lg p-2.5 backdrop-blur-xs text-[10px] text-[#64748B] z-10 space-y-1.5 shadow-sm hidden sm:block">
+          <p className="font-semibold text-[#0F172A] uppercase tracking-wider text-[9px]">Simbología de Grupos:</p>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#486341]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
             <span>Perseverancia Alta (&gt;85%)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#B38646]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#D97706]" />
             <span>Asistencia Media (70-84%)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#9E382A]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" />
             <span>Atención Pastoral Requerida (&lt;70%)</span>
           </div>
         </div>
 
         {selectedGroup && (
-          <div className="absolute bottom-3 right-3 max-w-sm w-80 bg-white border border-[#E0D4C7] rounded-xl shadow-md p-3.5 z-20">
+          <div className="absolute bottom-3 right-3 max-w-sm w-80 bg-white border border-[#D8DFEA] rounded-xl shadow-md p-3.5 z-20">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div>
-                <span className="text-[10px] font-medium text-[#8C5D36] bg-[#FAF7F2] border border-[#E8DFD7] px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-medium text-[#4F46E5] bg-[#F6F8FB] border border-[#E2E8F0] px-1.5 py-0.5 rounded">
                   {selectedGroup.code}
                 </span>
-                <h3 className="text-xs font-serif font-bold text-[#2D1F17] mt-1 flex items-center gap-1.5">
-                  <Church className="w-3.5 h-3.5 text-[#8C5D36]" />
+                <h3 className="text-xs font-serif font-bold text-[#0F172A] mt-1 flex items-center gap-1.5">
+                  <Church className="w-3.5 h-3.5 text-[#4F46E5]" />
                   {selectedGroup.name}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedGroup(null)}
-                className="text-[#998576] hover:text-[#2D1F17] p-0.5"
+                className="text-[#7B8BA3] hover:text-[#0F172A] p-0.5"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-1.5 text-xs text-[#5C4535] mb-3">
+            <div className="space-y-1.5 text-xs text-[#334155] mb-3">
               <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#998576] shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-[#7B8BA3] shrink-0" />
                 <span className="truncate">{selectedGroup.address} ({selectedGroup.zone})</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-[#998576] shrink-0" />
-                <span>Anfitrión/Líder: <strong className="text-[#2D1F17]">{selectedGroup.leaderName}</strong></span>
+                <Users className="w-3.5 h-3.5 text-[#7B8BA3] shrink-0" />
+                <span>Anfitrión/Líder: <strong className="text-[#0F172A]">{selectedGroup.leaderName}</strong></span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[#998576] shrink-0" />
+                <Clock className="w-3.5 h-3.5 text-[#7B8BA3] shrink-0" />
                 <span>Día: <strong>{selectedGroup.meetingDay}s, {selectedGroup.meetingTime} hrs</strong></span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 p-2 bg-[#FAF7F2] border border-[#E8DFD7] rounded-lg text-center mb-3">
+            <div className="grid grid-cols-2 gap-2 p-2 bg-[#F6F8FB] border border-[#E2E8F0] rounded-lg text-center mb-3">
               <div>
-                <p className="text-[10px] text-[#7D6B5E]">Miembros en Célula</p>
-                <p className="text-sm font-serif font-bold text-[#2D1F17]">{selectedGroup.memberCount}</p>
+                <p className="text-[10px] text-[#64748B]">Miembros del Grupo</p>
+                <p className="text-sm font-serif font-bold text-[#0F172A]">{selectedGroup.memberCount}</p>
               </div>
               <div>
-                <p className="text-[10px] text-[#7D6B5E]">Perseverancia</p>
+                <p className="text-[10px] text-[#64748B]">Perseverancia</p>
                 <p className={`text-sm font-serif font-bold ${
-                  selectedGroup.averageAttendanceRate >= 85 ? 'text-[#486341]' :
-                  selectedGroup.averageAttendanceRate >= 75 ? 'text-[#B38646]' : 'text-[#9E382A]'
+                  selectedGroup.averageAttendanceRate >= 85 ? 'text-[#16A34A]' :
+                  selectedGroup.averageAttendanceRate >= 75 ? 'text-[#D97706]' : 'text-[#DC2626]'
                 }`}>
                   {selectedGroup.averageAttendanceRate}%
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => onQuickAttendanceForGroup && onQuickAttendanceForGroup(selectedGroup.id)}
-              className="w-full py-1.5 px-2.5 bg-[#3B281C] hover:bg-[#2D1F17] text-[#FAF7F2] rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <span>Registrar Asistencia en este Hogar</span>
-              <ExternalLink className="w-3 h-3" />
-            </button>
+            {onQuickAttendanceForGroup && (
+              <button
+                onClick={() => onQuickAttendanceForGroup(selectedGroup.id)}
+                className="w-full py-1.5 px-2.5 bg-[#4F46E5] hover:bg-[#4338CA] text-[#F6F8FB] rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span>Registrar Asistencia en este Grupo</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
+            )}
           </div>
         )}
       </div>

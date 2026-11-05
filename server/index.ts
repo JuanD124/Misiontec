@@ -1,23 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { pool, withUser } from './db';
-import {
-  FASE_POR_ORDEN,
-  ORDEN_POR_FASE,
-  SEMAFORO,
-  SEMAFORO_INVERSO,
-  ESTADO_GRUPO,
-  SEVERIDAD,
-  TIPO_ALERTA,
-  haceCuanto,
-  separarNombre,
-} from './mappers';
+import { pool, withTransaction } from './db';
+import { FASES, SEMAFORO, ESTADO_GRUPO, separarNombre } from './mappers';
 
 const app = express();
 app.use(express.json());
-
-function usuarioActual(req: Request): number {
-  return Number(req.header('x-usuario-id') || 1);
-}
 
 const ruta =
   (fn: (req: Request, res: Response) => Promise<unknown>) =>
@@ -28,16 +14,14 @@ async function obtenerPersonas() {
   const [rows]: any = await pool.query(`
     SELECT p.id_persona, p.codigo, p.nombres, p.apellidos, p.numero_documento, p.telefono, p.correo,
            TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, CURDATE()) AS edad, p.genero, p.direccion,
-           d.nombre AS distrito, g.id_grupo, g.nombre AS grupo, f.orden AS fase_orden,
+           d.nombre AS distrito, g.id_grupo, g.nombre AS grupo, p.fase,
            s.semaforo, p.id_mentor, s.mentor, s.faltas_consecutivas, s.ultima_asistencia,
-           DATE(s.ultimo_seguimiento) AS ultimo_seguimiento, s.dias_sin_contacto,
            p.notas_criticas, p.fecha_ingreso,
            (SELECT GROUP_CONCAT(e.nombre SEPARATOR '|')
               FROM persona_etiqueta pe JOIN etiqueta e ON e.id_etiqueta = pe.id_etiqueta
              WHERE pe.id_persona = p.id_persona) AS etiquetas
     FROM persona p
     JOIN vw_semaforo_persona s ON s.id_persona = p.id_persona
-    JOIN fase_discipulado f    ON f.id_fase = p.id_fase
     LEFT JOIN grupo g          ON g.id_grupo = p.id_grupo
     LEFT JOIN zona z           ON z.id_zona = g.id_zona
     LEFT JOIN distrito d       ON d.id_distrito = z.id_distrito
@@ -57,14 +41,12 @@ async function obtenerPersonas() {
     district: r.distrito ?? '',
     groupId: r.id_grupo ? String(r.id_grupo) : '',
     groupName: r.grupo ?? 'Sin grupo',
-    phase: FASE_POR_ORDEN[r.fase_orden],
+    phase: r.fase,
     status: SEMAFORO[r.semaforo],
     mentorName: r.mentor ?? 'Sin asignar',
     mentorId: r.id_mentor ? String(r.id_mentor) : '',
     consecutiveAbsences: Number(r.faltas_consecutivas),
     lastAttendanceDate: r.ultima_asistencia ?? 'Sin registro',
-    lastFollowUpDate: r.ultimo_seguimiento ?? 'Sin registro',
-    daysSinceLastContact: Number(r.dias_sin_contacto),
     criticalNotes: r.notas_criticas ?? undefined,
     enrollmentDate: r.fecha_ingreso,
     tags: r.etiquetas ? r.etiquetas.split('|') : [],
@@ -111,49 +93,22 @@ async function obtenerGrupos() {
   }));
 }
 
-async function obtenerSeguimientos() {
-  const [rows]: any = await pool.query(`
-    SELECT s.id_seguimiento, s.id_persona, CONCAT(p.nombres, ' ', p.apellidos) AS persona,
-           DATE(s.fecha) AS fecha, s.canal, s.estado_pastoral, s.notas, s.compromisos,
-           s.proximo_contacto, s.semaforo_resultante,
-           CONCAT(rp.nombres, ' ', rp.apellidos) AS registrado_por, r.nombre AS rol
-    FROM seguimiento s
-    JOIN persona p  ON p.id_persona = s.id_persona
-    JOIN usuario u  ON u.id_usuario = s.id_usuario
-    JOIN persona rp ON rp.id_persona = u.id_persona
-    JOIN rol r      ON r.id_rol = u.id_rol
-    ORDER BY s.fecha DESC`);
-
-  return rows.map((r: any) => ({
-    id: String(r.id_seguimiento),
-    personId: String(r.id_persona),
-    personName: r.persona,
-    date: r.fecha,
-    channel: r.canal,
-    pastoralStatus: r.estado_pastoral,
-    notes: r.notas ?? '',
-    commitments: r.compromisos ?? '',
-    nextContactDate: r.proximo_contacto ?? '',
-    registeredByName: r.registrado_por,
-    registeredByRole: r.rol,
-    resultingStatus: SEMAFORO[r.semaforo_resultante],
-  }));
-}
-
 async function obtenerAlertas() {
   const [rows]: any = await pool.query(`
-    SELECT id_alerta, titulo, mensaje, fecha_generacion, severidad, tipo, id_persona, leida
-    FROM alerta WHERE resuelta = 0 ORDER BY fecha_generacion DESC`);
+    SELECT id_persona, nombre_completo, faltas_consecutivas, ultima_asistencia
+    FROM vw_semaforo_persona
+    WHERE faltas_consecutivas >= 2
+    ORDER BY faltas_consecutivas DESC, id_persona`);
 
   return rows.map((r: any) => ({
-    id: String(r.id_alerta),
-    title: r.titulo,
-    message: r.mensaje,
-    timeAgo: haceCuanto(r.fecha_generacion),
-    severity: SEVERIDAD[r.severidad],
-    type: TIPO_ALERTA[r.tipo],
-    relatedPersonId: r.id_persona ? String(r.id_persona) : undefined,
-    read: r.leida === 1,
+    id: String(r.id_persona),
+    title: `Inasistencias consecutivas: ${r.nombre_completo}`,
+    message: `Registra ${r.faltas_consecutivas} faltas seguidas en su grupo.`,
+    timeAgo: r.ultima_asistencia ? `Última asistencia: ${r.ultima_asistencia}` : 'Sin asistencias registradas',
+    severity: Number(r.faltas_consecutivas) >= 3 ? 'critical' : 'warning',
+    type: 'absence',
+    relatedPersonId: String(r.id_persona),
+    read: false,
   }));
 }
 
@@ -177,41 +132,16 @@ async function obtenerEventos() {
   }));
 }
 
-async function obtenerAuditoria() {
-  const [rows]: any = await pool.query(`
-    SELECT a.id_auditoria, a.fecha_hora, a.accion, a.tabla_afectada, a.detalle, a.direccion_ip,
-           CONCAT(p.nombres, ' ', p.apellidos) AS usuario, r.nombre AS rol
-    FROM auditoria a
-    LEFT JOIN usuario u ON u.id_usuario = a.id_usuario
-    LEFT JOIN persona p ON p.id_persona = u.id_persona
-    LEFT JOIN rol r     ON r.id_rol = u.id_rol
-    ORDER BY a.fecha_hora DESC, a.id_auditoria DESC
-    LIMIT 200`);
-
-  return rows.map((r: any) => ({
-    id: String(r.id_auditoria),
-    timestamp: r.fecha_hora,
-    userName: r.usuario ?? 'Sistema',
-    userRole: r.rol ?? 'sistema',
-    action: r.accion,
-    entity: r.tabla_afectada,
-    details: r.detalle ?? '',
-    ipAddress: r.direccion_ip ?? '',
-  }));
-}
-
-
 app.get('/api/salud', ruta(async (_req, res) => {
   const [rows]: any = await pool.query('SELECT DATABASE() AS base, NOW() AS hora');
   res.json({ ok: true, ...rows[0] });
 }));
 
 app.get('/api/inicio', ruta(async (_req, res) => {
-  const [people, groups, followUps, notifications, events, auditLogs] = await Promise.all([
-    obtenerPersonas(), obtenerGrupos(), obtenerSeguimientos(),
-    obtenerAlertas(), obtenerEventos(), obtenerAuditoria(),
+  const [people, groups, notifications, events] = await Promise.all([
+    obtenerPersonas(), obtenerGrupos(), obtenerAlertas(), obtenerEventos(),
   ]);
-  res.json({ people, groups, followUps, notifications, events, auditLogs });
+  res.json({ people, groups, notifications, events });
 }));
 
 app.get('/api/dashboard', ruta(async (_req, res) => {
@@ -232,36 +162,29 @@ app.post('/api/personas', ruta(async (req, res) => {
   const b = req.body;
   const { nombres, apellidos } = separarNombre(b.fullName);
   const anioNacimiento = b.age ? new Date().getFullYear() - Number(b.age) : null;
+  const fase = FASES.includes(b.phase) ? b.phase : 'contacto';
 
-  const id = await withUser(usuarioActual(req), async (conn) => {
-    await conn.beginTransaction();
-    try {
-      const [g]: any = await conn.query('SELECT id_lider FROM grupo WHERE id_grupo = ?', [b.groupId || null]);
-      const [[{ siguiente }]]: any = await conn.query(
-        "SELECT CONCAT('MT-', LPAD(IFNULL(MAX(id_persona), 0) + 1, 4, '0')) AS siguiente FROM persona");
+  const id = await withTransaction(async (conn) => {
+    const [g]: any = await conn.query('SELECT id_lider FROM grupo WHERE id_grupo = ?', [b.groupId || null]);
+    const [[{ siguiente }]]: any = await conn.query(
+      "SELECT CONCAT('MT-', LPAD(IFNULL(MAX(id_persona), 0) + 1, 4, '0')) AS siguiente FROM persona");
 
-      const [r]: any = await conn.query(
-        `INSERT INTO persona (codigo, numero_documento, nombres, apellidos, fecha_nacimiento, genero,
-                              telefono, correo, direccion, id_grupo, id_mentor, id_fase, fecha_ingreso,
-                              notas_criticas, autoriza_datos, fecha_autorizacion)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                 (SELECT id_fase FROM fase_discipulado WHERE orden = ?), CURDATE(), ?, 1, NOW())`,
-        [siguiente, b.dni, nombres, apellidos, anioNacimiento ? `${anioNacimiento}-01-01` : null,
-         b.gender || null, b.phone || null, b.email || null, b.address || null,
-         b.groupId || null, g[0]?.id_lider ?? null, ORDEN_POR_FASE[b.phase] ?? 1, b.criticalNotes || null]);
+    const [r]: any = await conn.query(
+      `INSERT INTO persona (codigo, numero_documento, nombres, apellidos, fecha_nacimiento, genero,
+                            telefono, correo, direccion, id_grupo, id_mentor, fase, fecha_ingreso,
+                            notas_criticas, autoriza_datos, fecha_autorizacion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), ?, 1, NOW())`,
+      [siguiente, b.dni, nombres, apellidos, anioNacimiento ? `${anioNacimiento}-01-01` : null,
+       b.gender || null, b.phone || null, b.email || null, b.address || null,
+       b.groupId || null, g[0]?.id_lider ?? null, fase, b.criticalNotes || null]);
 
-      for (const tag of b.tags ?? []) {
-        await conn.query('INSERT IGNORE INTO etiqueta (nombre) VALUES (?)', [tag]);
-        await conn.query(
-          'INSERT IGNORE INTO persona_etiqueta (id_persona, id_etiqueta) SELECT ?, id_etiqueta FROM etiqueta WHERE nombre = ?',
-          [r.insertId, tag]);
-      }
-      await conn.commit();
-      return r.insertId;
-    } catch (e) {
-      await conn.rollback();
-      throw e;
+    for (const tag of b.tags ?? []) {
+      await conn.query('INSERT IGNORE INTO etiqueta (nombre) VALUES (?)', [tag]);
+      await conn.query(
+        'INSERT IGNORE INTO persona_etiqueta (id_persona, id_etiqueta) SELECT ?, id_etiqueta FROM etiqueta WHERE nombre = ?',
+        [r.insertId, tag]);
     }
+    return r.insertId;
   });
 
   const persona = (await obtenerPersonas()).find((p: any) => p.id === String(id));
@@ -269,72 +192,36 @@ app.post('/api/personas', ruta(async (req, res) => {
 }));
 
 app.patch('/api/personas/:id/fase', ruta(async (req, res) => {
-  await withUser(usuarioActual(req), (conn) => conn.query(
-    'UPDATE persona SET id_fase = (SELECT id_fase FROM fase_discipulado WHERE orden = ?) WHERE id_persona = ?',
-    [ORDEN_POR_FASE[req.body.phase], req.params.id]));
+  if (!FASES.includes(req.body.phase)) {
+    return res.status(400).json({ error: 'Fase de discipulado no válida.' });
+  }
+  await pool.query('UPDATE persona SET fase = ? WHERE id_persona = ?', [req.body.phase, req.params.id]);
   res.json({ ok: true });
 }));
 
 app.delete('/api/personas/:id', ruta(async (req, res) => {
-  await pool.query('CALL sp_desactivar_persona(?, ?, ?)',
-    [req.params.id, usuarioActual(req), req.body?.motivo ?? 'Desactivado desde la aplicación']);
+  await pool.query('CALL sp_desactivar_persona(?)', [req.params.id]);
   res.json({ ok: true });
-}));
-
-app.post('/api/seguimientos', ruta(async (req, res) => {
-  const b = req.body;
-  await pool.query(
-    `INSERT INTO seguimiento (id_persona, id_usuario, fecha, canal, estado_pastoral, notas, compromisos,
-                              proximo_contacto, semaforo_resultante)
-     VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?)`,
-    [b.personId, usuarioActual(req), b.channel, b.pastoralStatus, b.notes, b.commitments,
-     b.nextContactDate || null, SEMAFORO_INVERSO[b.resultingStatus] ?? 'verde']);
-  await pool.query(
-    "UPDATE alerta SET resuelta = 1, fecha_resolucion = NOW() WHERE id_persona = ? AND tipo = 'sin_seguimiento' AND resuelta = 0",
-    [b.personId]);
-  res.status(201).json({ ok: true });
 }));
 
 app.post('/api/asistencias', ruta(async (req, res) => {
   const { groupId, date, topic, items } = req.body;
-  const usuario = usuarioActual(req);
-  await withUser(usuario, async (conn) => {
-    await conn.beginTransaction();
-    try {
-      await conn.query(
-        `INSERT INTO sesion_asistencia (id_grupo, fecha, tema, id_usuario) VALUES (?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE tema = VALUES(tema), id_usuario = VALUES(id_usuario)`,
-        [groupId, date, topic ?? null, usuario]);
-      const [[sesion]]: any = await conn.query(
-        'SELECT id_sesion FROM sesion_asistencia WHERE id_grupo = ? AND fecha = ?', [groupId, date]);
+  await withTransaction(async (conn) => {
+    await conn.query(
+      `INSERT INTO sesion_asistencia (id_grupo, fecha, tema) VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE tema = VALUES(tema)`,
+      [groupId, date, topic ?? null]);
+    const [[sesion]]: any = await conn.query(
+      'SELECT id_sesion FROM sesion_asistencia WHERE id_grupo = ? AND fecha = ?', [groupId, date]);
 
-      for (const [personId, estado] of Object.entries(items as Record<string, string>)) {
-        await conn.query(
-          `INSERT INTO detalle_asistencia (id_sesion, id_persona, estado) VALUES (?, ?, ?)
-           ON DUPLICATE KEY UPDATE estado = VALUES(estado)`,
-          [sesion.id_sesion, personId, estado]);
-      }
+    for (const [personId, estado] of Object.entries(items as Record<string, string>)) {
       await conn.query(
-        "INSERT INTO auditoria (id_usuario, accion, tabla_afectada, id_registro, detalle) VALUES (?, 'INSERT', 'sesion_asistencia', ?, ?)",
-        [usuario, sesion.id_sesion, `Asistencia del grupo ${groupId} del ${date}`]);
-      await conn.commit();
-    } catch (e) {
-      await conn.rollback();
-      throw e;
+        `INSERT INTO detalle_asistencia (id_sesion, id_persona, estado) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE estado = VALUES(estado)`,
+        [sesion.id_sesion, personId, estado]);
     }
   });
-  await pool.query('CALL sp_generar_alertas()');
   res.status(201).json({ ok: true });
-}));
-
-app.patch('/api/alertas/:id/leida', ruta(async (req, res) => {
-  await pool.query('UPDATE alerta SET leida = 1 WHERE id_alerta = ?', [req.params.id]);
-  res.json({ ok: true });
-}));
-
-app.post('/api/alertas/generar', ruta(async (_req, res) => {
-  await pool.query('CALL sp_generar_alertas()');
-  res.json({ ok: true });
 }));
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

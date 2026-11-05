@@ -6,12 +6,7 @@ export type DiscipleshipPhase =
   | 'formacion' 
   | 'liderazgo';
 
-export type UserRole = 
-  | 'admin' 
-  | 'pastor_distrito' 
-  | 'pastor_local' 
-  | 'discipulador' 
-  | 'supervisor_zona';
+export type UserRole = 'pastor' | 'asistente' | 'discipulador' | 'discipulo';
 
 export interface Person {
   id: string;
@@ -32,8 +27,6 @@ export interface Person {
   mentorId: string;
   consecutiveAbsences: number;
   lastAttendanceDate: string;
-  lastFollowUpDate: string;
-  daysSinceLastContact: number;
   criticalNotes?: string;
   avatarUrl?: string;
   enrollmentDate: string;
@@ -58,21 +51,6 @@ export interface MissionaryGroup {
   averageAttendanceRate: number;
   status: 'active' | 'watch' | 'inactive';
   criticalMembersCount: number;
-}
-
-export interface FollowUpRecord {
-  id: string;
-  personId: string;
-  personName: string;
-  date: string;
-  channel: 'llamada' | 'visita' | 'reunion_pastoral' | 'mensaje_chat';
-  pastoralStatus: 'excelente' | 'estable' | 'desanimado' | 'en_crisis' | 'necesita_oracion';
-  notes: string;
-  commitments: string;
-  nextContactDate: string;
-  registeredByName: string;
-  registeredByRole: string;
-  resultingStatus: TrafficLightStatus;
 }
 
 export interface AttendanceItem {
@@ -112,15 +90,4 @@ export interface MissionEvent {
   attendeesCount: number;
   targetAudience: string;
   status: 'programado' | 'en_curso' | 'concluido';
-}
-
-export interface AuditLog {
-  id: string;
-  timestamp: string;
-  userName: string;
-  userRole: string;
-  action: string;
-  entity: string;
-  details: string;
-  ipAddress: string;
 }

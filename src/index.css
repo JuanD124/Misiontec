@@ -2,14 +2,14 @@
 
 @layer base {
   :root {
-    --font-serif: 'Cormorant Garamond', 'Cinzel', Georgia, serif;
+    --font-serif: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #FAF7F2;
-    color: #2D1F17;
+    background-color: #F6F8FB;
+    color: #0F172A;
   }
 
   h1, h2, h3, .font-serif-sacred {
@@ -22,13 +22,13 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F4EDE4;
+  background: #EEF2F7;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D4C3B3;
+  background: #CBD5E1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B8A18E;
+  background: #94A3B8;
 }
 

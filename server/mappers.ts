@@ -1,16 +1,4 @@
-export const FASE_POR_ORDEN: Record<number, string> = {
-  1: 'contacto',
-  2: 'consolidacion',
-  3: 'formacion',
-  4: 'liderazgo',
-};
-
-export const ORDEN_POR_FASE: Record<string, number> = {
-  contacto: 1,
-  consolidacion: 2,
-  formacion: 3,
-  liderazgo: 4,
-};
+export const FASES = ['contacto', 'consolidacion', 'formacion', 'liderazgo'];
 
 export const SEMAFORO: Record<string, 'green' | 'yellow' | 'red'> = {
   verde: 'green',
@@ -18,40 +6,11 @@ export const SEMAFORO: Record<string, 'green' | 'yellow' | 'red'> = {
   rojo: 'red',
 };
 
-export const SEMAFORO_INVERSO: Record<string, string> = {
-  green: 'verde',
-  yellow: 'amarillo',
-  red: 'rojo',
-};
-
 export const ESTADO_GRUPO: Record<string, 'active' | 'watch' | 'inactive'> = {
   activo: 'active',
   observacion: 'watch',
   inactivo: 'inactive',
 };
-
-export const SEVERIDAD: Record<string, 'critical' | 'warning' | 'info'> = {
-  critica: 'critical',
-  advertencia: 'warning',
-  informativa: 'info',
-};
-
-export const TIPO_ALERTA: Record<string, 'absence' | 'followup' | 'group' | 'discipleship'> = {
-  inasistencia: 'absence',
-  sin_seguimiento: 'followup',
-  grupo: 'group',
-  discipulado: 'discipleship',
-};
-
-export function haceCuanto(fecha: string): string {
-  const minutos = Math.floor((Date.now() - new Date(fecha.replace(' ', 'T')).getTime()) / 60000);
-  if (minutos < 1) return 'Hace un momento';
-  if (minutos < 60) return `Hace ${minutos} min`;
-  const horas = Math.floor(minutos / 60);
-  if (horas < 24) return `Hace ${horas} h`;
-  const dias = Math.floor(horas / 24);
-  return dias === 1 ? 'Hace 1 día' : `Hace ${dias} días`;
-}
 
 export function separarNombre(fullName: string): { nombres: string; apellidos: string } {
   const partes = fullName.trim().split(/\s+/);

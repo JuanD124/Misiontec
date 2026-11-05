@@ -1,157 +1,156 @@
 import React, { useState } from 'react';
-import { 
-  FileSpreadsheet, 
-  ShieldCheck, 
-  FileText, 
-  Printer, 
+import {
+  FileSpreadsheet,
+  FileText,
+  Printer,
   BarChart2
 } from 'lucide-react';
-import { AuditLog, Person, MissionaryGroup } from '../../types';
+import { Person, MissionaryGroup } from '../../types';
 
 interface ReportsViewProps {
-  auditLogs: AuditLog[];
   people: Person[];
   groups: MissionaryGroup[];
 }
 
 export const ReportsView: React.FC<ReportsViewProps> = ({
-  auditLogs,
   people,
   groups
 }) => {
-  const [reportType, setReportType] = useState('executive');
+  const [reportType, setReportType] = useState<'executive' | 'traffic'>('executive');
 
   const printReport = () => {
     window.print();
   };
 
+  const peopleInCare = people
+    .filter(p => p.status !== 'green')
+    .sort((a, b) => b.consecutiveAbsences - a.consecutiveAbsences);
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8DFD7] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E2E8F0] shadow-xs">
         <div>
-          <h1 className="text-lg font-serif font-bold text-[#2D1F17] flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-[#8C5D36]" />
-            Informes Pastorales & Bitácora de Registro
+          <h1 className="text-lg font-serif font-bold text-[#0F172A] flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-[#4F46E5]" />
+            Informes Pastorales
           </h1>
-          <p className="text-xs text-[#7D6B5E] mt-0.5">
-            Consolidados de gestión de la misión y registro inmutable de trazabilidad de cambios.
+          <p className="text-xs text-[#64748B] mt-0.5">
+            Consolidados de la misión y detalle de hermanos que requieren acompañamiento.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={printReport}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#FAF7F2] hover:bg-[#F2ECE4] text-[#3B281C] text-xs font-medium rounded-lg border border-[#D9CCC1] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#F6F8FB] hover:bg-[#EEF2F7] text-[#4F46E5] text-xs font-medium rounded-lg border border-[#D8DFEA] transition-colors cursor-pointer"
           >
-            <Printer className="w-4 h-4 text-[#8C5D36]" />
+            <Printer className="w-4 h-4 text-[#4F46E5]" />
             <span>Imprimir / Exportar PDF</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
           onClick={() => setReportType('executive')}
           className={`p-4.5 rounded-xl border cursor-pointer transition-all ${
-            reportType === 'executive' 
-              ? 'bg-[#FAF7F2] border-[#8C5D36] ring-1 ring-[#8C5D36]/20 shadow-xs' 
-              : 'bg-white border-[#E8DFD7] hover:border-[#B8A18E]'
+            reportType === 'executive'
+              ? 'bg-[#F6F8FB] border-[#4F46E5] ring-1 ring-[#4F46E5]/20 shadow-xs'
+              : 'bg-white border-[#E2E8F0] hover:border-[#94A3B8]'
           }`}
         >
-          <FileText className="w-5 h-5 text-[#8C5D36] mb-2" />
-          <h3 className="text-xs font-serif font-bold text-[#2D1F17]">Consolidado Mensual de Misión</h3>
-          <p className="text-[11px] text-[#7D6B5E] mt-1">
-            Resumen estadístico de {people.length} miembros, {groups.length} células y semáforo pastoral.
+          <FileText className="w-5 h-5 text-[#4F46E5] mb-2" />
+          <h3 className="text-xs font-serif font-bold text-[#0F172A]">Consolidado de Misión</h3>
+          <p className="text-[11px] text-[#64748B] mt-1">
+            Resumen de {people.length} miembros y {groups.length} grupos con su asistencia.
           </p>
         </div>
 
-        <div 
+        <div
           onClick={() => setReportType('traffic')}
           className={`p-4.5 rounded-xl border cursor-pointer transition-all ${
-            reportType === 'traffic' 
-              ? 'bg-[#FAF7F2] border-[#8C5D36] ring-1 ring-[#8C5D36]/20 shadow-xs' 
-              : 'bg-white border-[#E8DFD7] hover:border-[#B8A18E]'
+            reportType === 'traffic'
+              ? 'bg-[#F6F8FB] border-[#4F46E5] ring-1 ring-[#4F46E5]/20 shadow-xs'
+              : 'bg-white border-[#E2E8F0] hover:border-[#94A3B8]'
           }`}
         >
-          <BarChart2 className="w-5 h-5 text-[#9E382A] mb-2" />
-          <h3 className="text-xs font-serif font-bold text-[#2D1F17]">Informe de Cuidado & Ausencias</h3>
-          <p className="text-[11px] text-[#7D6B5E] mt-1">
-            Detalle de hermanos en atención prioritaria con compromisos de visita y oración.
-          </p>
-        </div>
-
-        <div 
-          onClick={() => setReportType('audit')}
-          className={`p-4.5 rounded-xl border cursor-pointer transition-all ${
-            reportType === 'audit' 
-              ? 'bg-[#FAF7F2] border-[#8C5D36] ring-1 ring-[#8C5D36]/20 shadow-xs' 
-              : 'bg-white border-[#E8DFD7] hover:border-[#B8A18E]'
-          }`}
-        >
-          <ShieldCheck className="w-5 h-5 text-[#486341] mb-2" />
-          <h3 className="text-xs font-serif font-bold text-[#2D1F17]">Bitácora de Trazabilidad</h3>
-          <p className="text-[11px] text-[#7D6B5E] mt-1">
-            Registro de ingresos, promociones de discipulado y asistencias por usuario.
+          <BarChart2 className="w-5 h-5 text-[#DC2626] mb-2" />
+          <h3 className="text-xs font-serif font-bold text-[#0F172A]">Informe de Cuidado & Ausencias</h3>
+          <p className="text-[11px] text-[#64748B] mt-1">
+            Hermanos con inasistencias consecutivas a su grupo ({peopleInCare.length} en total).
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-[#E8DFD7] shadow-xs overflow-hidden">
-        <div className="p-4.5 border-b border-[#E8DFD7] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#8C5D36]" />
-            <h2 className="text-sm font-serif font-bold text-[#2D1F17]">
-              Bitácora Histórica de Auditoría
-            </h2>
-          </div>
-          <span className="text-xs bg-[#FAF7F2] text-[#7D6B5E] border border-[#E8DFD7] px-2 py-0.5 rounded font-mono">
-            {auditLogs.length} acciones registradas
-          </span>
-        </div>
-
+      <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF7F2] text-[#7D6B5E] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8DFD7]">
-              <tr>
-                <th className="py-2.5 px-4.5">Fecha & Hora</th>
-                <th className="py-2.5 px-4.5">Usuario Responsable</th>
-                <th className="py-2.5 px-4.5">Rol Pastoral</th>
-                <th className="py-2.5 px-4.5">Acción</th>
-                <th className="py-2.5 px-4.5">Entidad Afectada</th>
-                <th className="py-2.5 px-4.5">Detalles</th>
-                <th className="py-2.5 px-4.5">Origen IP</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F2ECE4]">
-              {auditLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-[#FAF7F2] transition-colors">
-                  <td className="py-3 px-4.5 font-mono text-[#7D6B5E] text-[11px] whitespace-nowrap">
-                    {log.timestamp}
-                  </td>
-                  <td className="py-3 px-4.5 font-medium text-[#2D1F17]">
-                    {log.userName}
-                  </td>
-                  <td className="py-3 px-4.5">
-                    <span className="bg-[#FAF7F2] text-[#6B4E3D] border border-[#E8DFD7] px-2 py-0.5 rounded text-[10px] font-medium">
-                      {log.userRole}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4.5 font-mono font-medium text-[11px] text-[#8C5D36]">
-                    {log.action}
-                  </td>
-                  <td className="py-3 px-4.5 text-[#2D1F17]">
-                    {log.entity}
-                  </td>
-                  <td className="py-3 px-4.5 text-[#5C4535] max-w-xs">
-                    {log.details}
-                  </td>
-                  <td className="py-3 px-4.5 font-mono text-[#998576] text-[10px]">
-                    {log.ipAddress}
-                  </td>
+          {reportType === 'executive' ? (
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F6F8FB] text-[#64748B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E2E8F0]">
+                <tr>
+                  <th className="py-2.5 px-4.5">Grupo</th>
+                  <th className="py-2.5 px-4.5">Zona</th>
+                  <th className="py-2.5 px-4.5">Líder</th>
+                  <th className="py-2.5 px-4.5">Miembros</th>
+                  <th className="py-2.5 px-4.5">Asistencia</th>
+                  <th className="py-2.5 px-4.5">En atención</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[#EEF2F7]">
+                {groups.map((g) => (
+                  <tr key={g.id} className="hover:bg-[#F6F8FB] transition-colors">
+                    <td className="py-3 px-4.5 font-medium text-[#0F172A]">{g.name}</td>
+                    <td className="py-3 px-4.5 text-[#334155]">{g.zone}</td>
+                    <td className="py-3 px-4.5 text-[#334155]">{g.leaderName}</td>
+                    <td className="py-3 px-4.5 text-[#0F172A]">{g.memberCount}</td>
+                    <td className="py-3 px-4.5 text-[#0F172A]">{g.averageAttendanceRate}%</td>
+                    <td className="py-3 px-4.5 text-[#B91C1C] font-medium">{g.criticalMembersCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F6F8FB] text-[#64748B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E2E8F0]">
+                <tr>
+                  <th className="py-2.5 px-4.5">Hermano</th>
+                  <th className="py-2.5 px-4.5">Grupo</th>
+                  <th className="py-2.5 px-4.5">Mentor</th>
+                  <th className="py-2.5 px-4.5">Faltas seguidas</th>
+                  <th className="py-2.5 px-4.5">Última asistencia</th>
+                  <th className="py-2.5 px-4.5">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#EEF2F7]">
+                {peopleInCare.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-[#7B8BA3] italic">
+                      Todos los hermanos asisten con regularidad.
+                    </td>
+                  </tr>
+                ) : (
+                  peopleInCare.map((p) => (
+                    <tr key={p.id} className="hover:bg-[#F6F8FB] transition-colors">
+                      <td className="py-3 px-4.5 font-medium text-[#0F172A]">{p.fullName}</td>
+                      <td className="py-3 px-4.5 text-[#334155]">{p.groupName}</td>
+                      <td className="py-3 px-4.5 text-[#334155]">{p.mentorName}</td>
+                      <td className="py-3 px-4.5 text-[#0F172A]">{p.consecutiveAbsences}</td>
+                      <td className="py-3 px-4.5 text-[#334155]">{p.lastAttendanceDate}</td>
+                      <td className="py-3 px-4.5">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          p.status === 'red'
+                            ? 'bg-[#FEE2E2] text-[#B91C1C] border border-[#FECACA]'
+                            : 'bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]'
+                        }`}>
+                          {p.status === 'red' ? 'Atención Urgente' : 'Seguimiento'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

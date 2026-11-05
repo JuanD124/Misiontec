@@ -15,16 +15,19 @@ export const pool = mysql.createPool({
   charset: 'UTF8MB4_SPANISH_CI',
 });
 
-export async function withUser<T>(
-  idUsuario: number,
+export async function withTransaction<T>(
   fn: (conn: mysql.PoolConnection) => Promise<T>,
 ): Promise<T> {
   const conn = await pool.getConnection();
   try {
-    await conn.query('SET @id_usuario_app = ?', [idUsuario]);
-    return await fn(conn);
+    await conn.beginTransaction();
+    const result = await fn(conn);
+    await conn.commit();
+    return result;
+  } catch (e) {
+    await conn.rollback();
+    throw e;
   } finally {
-    await conn.query('SET @id_usuario_app = NULL');
     conn.release();
   }
 }
