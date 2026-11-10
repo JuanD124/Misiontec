@@ -8,6 +8,13 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Person, MissionaryGroup, DiscipleshipPhase, TrafficLightStatus } from '../../types';
+import { NOMBRE_FASE } from '../../utils/formato';
+
+const COLOR_ESTADO: Record<TrafficLightStatus, { punto: string; chip: string; texto: string }> = {
+  red: { punto: 'bg-[#DC2626]', chip: 'bg-[#FEE2E2] text-[#B91C1C] border border-[#FECACA]', texto: 'Atención Urgente' },
+  yellow: { punto: 'bg-[#CA8A04]', chip: 'bg-[#FEF9C3] text-[#854D0E] border border-[#FEF08A]', texto: 'Seguimiento' },
+  green: { punto: 'bg-[#16A34A]', chip: 'bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]', texto: 'En Comunión' },
+};
 
 interface PeopleViewProps {
   people: Person[];
@@ -59,10 +66,10 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
         <div>
           <h1 className="text-lg font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
             <Users className="w-5 h-5 text-[#EA580C]" />
-            Padrón Fraterno & Directorio de Hermanos
+            Discípulos & Directorio
           </h1>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
-            Cuidado y registro de cada miembro, discipulado y grupo asignado.
+            Cuidado y registro de cada discípulo y su grupo de comunión.
           </p>
         </div>
 
@@ -81,7 +88,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
               className="flex items-center gap-1.5 px-4 py-2 bg-[#EA580C] hover:bg-[#C2410C] text-[#FAFAFA] text-xs font-medium rounded-lg shadow-xs transition-colors cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
-              <span>+ Registrar Nuevo Hermano</span>
+              <span>Registrar Nuevo Discípulo</span>
             </button>
           )}
         </div>
@@ -119,7 +126,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
             onChange={(e) => setGroupFilter(e.target.value)}
             className="w-full px-2.5 py-1.5 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg text-[#0A0A0A] focus:outline-none focus:border-[#EA580C]"
           >
-            <option value="all">Todos los Grupos de Discipulado</option>
+            <option value="all">Todos los Grupos de Comunión</option>
             {groups.map(g => (
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
@@ -141,13 +148,53 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
       </div>
 
       <div className="bg-white rounded-xl border border-[#E8E8E8] shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="md:hidden divide-y divide-[#F2F2F2]">
+          {filteredPeople.length === 0 ? (
+            <p className="p-8 text-center text-xs text-[#8A8A8A] italic">No se encontraron registros con los filtros seleccionados.</p>
+          ) : (
+            filteredPeople.map(person => {
+              const estado = COLOR_ESTADO[person.status];
+              return (
+                <button
+                  key={person.id}
+                  onClick={() => onOpenPersonDetail(person)}
+                  className="w-full text-left p-4 flex items-start gap-3 active:bg-[#FAFAFA]"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm text-white shrink-0 ${estado.punto}`}>
+                    {person.fullName.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm text-[#0A0A0A] leading-snug">{person.fullName}</p>
+                    <p className="text-[11px] text-[#6B6B6B] mt-0.5">{person.code} • Doc. {person.dni}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${estado.chip}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${estado.punto}`} />
+                        {estado.texto}
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8]">
+                        {NOMBRE_FASE[person.phase] ?? person.phase}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-[#0A0A0A]">{person.groupName}</p>
+                    <p className="mt-0.5 text-[11px] text-[#6B6B6B] flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-[#EA580C]" /> {person.phone}
+                      <span className="text-[#C4C4C4]">·</span> {person.district}
+                    </p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[#A3A3A3] shrink-0 mt-1" />
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-[#FAFAFA] text-[#6B6B6B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8E8E8]">
               <tr>
-                <th className="py-3 px-4.5">Hermano / Documento</th>
+                <th className="py-3 px-4.5">Discípulo / Documento</th>
                 <th className="py-3 px-4.5">Contacto & Zona</th>
-                <th className="py-3 px-4.5">Grupo de Discipulado</th>
+                <th className="py-3 px-4.5">Grupo de Comunión</th>
                 <th className="py-3 px-4.5">Fase de Formación</th>
                 <th className="py-3 px-4.5">Estado Pastoral</th>
                 <th className="py-3 px-4.5">Mentor Espiritual</th>
@@ -189,8 +236,8 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
                   </td>
 
                   <td className="py-3 px-4.5">
-                    <span className="capitalize px-2 py-0.5 rounded text-[10px] font-medium bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8]">
-                      {person.phase}
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8]">
+                      {NOMBRE_FASE[person.phase] ?? person.phase}
                     </span>
                   </td>
 

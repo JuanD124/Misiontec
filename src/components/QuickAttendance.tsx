@@ -89,7 +89,7 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
               Registro de Asistencia por Grupo
             </h2>
             <span className="text-xs bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8] font-medium px-2 py-0.5 rounded">
-              Reuniones de Discipulado
+              Reuniones de Comunión
             </span>
           </div>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
@@ -160,7 +160,7 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
         <table className="w-full text-left text-xs">
           <thead className="bg-[#FAFAFA] text-[#6B6B6B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8E8E8]">
             <tr>
-              <th className="py-2.5 px-4.5">Hermano / Documento</th>
+              <th className="py-2.5 px-4.5">Discípulo / Documento</th>
               <th className="py-2.5 px-4.5">Fase</th>
               <th className="py-2.5 px-4.5">Ausencias Anteriores</th>
               <th className="py-2.5 px-4.5 text-center">Asistencia ({meetingDate})</th>
@@ -170,7 +170,7 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
             {groupMembers.length === 0 ? (
               <tr>
                 <td colSpan={4} className="py-6 text-center text-[#8A8A8A] italic">
-                  No hay hermanos registrados en este grupo actualmente.
+                  No hay discípulos registrados en este grupo actualmente.
                 </td>
               </tr>
             ) : (

@@ -31,7 +31,7 @@ export const DiscipleshipView: React.FC<DiscipleshipViewProps> = ({
         <div>
           <h1 className="text-lg font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-[#EA580C]" />
-            Crecimiento Espiritual & Etapas de Discipulado
+            Adiestramiento & Etapas de Formación
           </h1>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
             Acompañamiento del creyente desde su primera visita, consolidación en la fe, formación y liderazgo ministerial.
@@ -63,7 +63,7 @@ export const DiscipleshipView: React.FC<DiscipleshipViewProps> = ({
                 <div className="pb-3 mb-3 border-b border-[#E8E8E8] flex items-center justify-between">
                   <div>
                     <h3 className="text-xs font-serif font-bold text-[#0A0A0A]">{phase.name}</h3>
-                    <span className="text-[10px] text-[#6B6B6B]">{members.length} hermanos</span>
+                    <span className="text-[10px] text-[#6B6B6B]">{members.length} discípulos</span>
                   </div>
                   <span className="w-2.5 h-2.5 rounded-full bg-[#EA580C]" />
                 </div>

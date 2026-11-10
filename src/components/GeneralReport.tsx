@@ -111,8 +111,8 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
   const { resumen } = informe;
   const totalFases = informe.fases.reduce((suma, f) => suma + f.total, 0) || 1;
   const tarjetas = [
-    { etiqueta: 'Miembros activos', valor: resumen.personasActivas, color: 'text-[#0A0A0A]' },
-    { etiqueta: 'Grupos de discipulado', valor: resumen.gruposActivos, color: 'text-[#0A0A0A]' },
+    { etiqueta: 'Discípulos activos', valor: resumen.personasActivas, color: 'text-[#0A0A0A]' },
+    { etiqueta: 'Grupos de comunión', valor: resumen.gruposActivos, color: 'text-[#0A0A0A]' },
     { etiqueta: 'Asistencia promedio', valor: `${resumen.asistenciaPromedio}%`, color: 'text-[#EA580C]' },
     { etiqueta: 'En atención urgente', valor: resumen.personasEnRojo, color: 'text-[#DC2626]' },
     { etiqueta: 'En seguimiento', valor: resumen.personasEnAmarillo, color: 'text-[#CA8A04]' },
@@ -149,7 +149,7 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-[#EA580C]">MISIONTEC</p>
             <h1 className="text-xl font-bold text-[#0A0A0A] mt-0.5">Informe General de Seguimiento</h1>
-            <p className="text-xs text-[#6B6B6B] mt-1">Estado de los grupos de discipulado, la asistencia y el acompañamiento de los miembros.</p>
+            <p className="text-xs text-[#6B6B6B] mt-1">Estado de los grupos de comunión, la asistencia y el acompañamiento de los discípulos.</p>
           </div>
           <div className="sm:text-right text-[11px] text-[#6B6B6B] shrink-0">
             <p><strong className="text-[#0A0A0A]">Generado:</strong> {fechaLarga(informe.generado)}</p>
@@ -168,7 +168,7 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
           </div>
         </Seccion>
 
-        <Seccion numero={2} titulo="Miembros por fase de discipulado">
+        <Seccion numero={2} titulo="Discípulos por fase de formación">
           <div className="space-y-1.5">
             {informe.fases.map((f) => (
               <div key={f.fase} className="flex items-center gap-3 text-[11px] print-avoid-break">
@@ -182,9 +182,9 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
           </div>
         </Seccion>
 
-        <Seccion numero={3} titulo="Grupos de discipulado">
+        <Seccion numero={3} titulo="Grupos de comunión">
           <Tabla
-            columnas={['Grupo', 'Zona', 'Líder', 'Reunión', 'Miembros', 'Asistencia', 'Atención', 'Seguim.']}
+            columnas={['Grupo', 'Zona', 'Líder', 'Reunión', 'Discípulos', 'Asistencia', 'Atención', 'Seguim.']}
             filas={informe.grupos.map((g) => [
               <span><strong className="text-[#0A0A0A]">{g.nombre}</strong><br /><span className="text-[#A3A3A3]">{g.codigo}</span></span>,
               g.zona, g.lider, g.reunion, g.miembros, `${g.asistencia}%`,
@@ -194,10 +194,10 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
           />
         </Seccion>
 
-        <Seccion numero={4} titulo="Miembros que requieren acompañamiento">
+        <Seccion numero={4} titulo="Discípulos que requieren acompañamiento">
           <Tabla
             columnas={['Código', 'Miembro', 'Grupo', 'Fase', 'Mentor', 'Faltas seguidas', 'Última asistencia', 'Estado']}
-            vacio="Todos los miembros asisten con regularidad."
+            vacio="Todos los discípulos asisten con regularidad."
             filas={informe.cuidado.map((c) => [
               c.codigo, <strong className="text-[#0A0A0A]">{c.nombre}</strong>, c.grupo, NOMBRE_FASE[c.fase] ?? c.fase, c.mentor,
               c.faltas, c.ultimaAsistencia === 'Sin registro' ? c.ultimaAsistencia : fechaCorta(c.ultimaAsistencia),
@@ -235,7 +235,7 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
           />
         </Seccion>
 
-        <Seccion numero={8} titulo="Nuevos miembros (últimos 90 días)">
+        <Seccion numero={8} titulo="Nuevos discípulos (últimos 90 días)">
           <Tabla
             columnas={['Código', 'Miembro', 'Grupo', 'Fase', 'Ingreso']}
             vacio="No hubo ingresos en este período."

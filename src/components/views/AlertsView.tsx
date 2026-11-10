@@ -30,14 +30,14 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
             Cuidado Fraterno & Atención de Alertas Pastorales
           </h1>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
-            Acompañamiento prioritario para hermanos con ausencias consecutivas a su grupo.
+            Acompañamiento prioritario para discípulos con ausencias consecutivas a su grupo.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-[#B91C1C] bg-[#FEE2E2] px-3 py-1 rounded-full flex items-center gap-1.5 border border-[#FECACA]">
             <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
-            {criticalPeople.length} Hermanos en Atención Prioritaria
+            {criticalPeople.length} Discípulos en Atención Prioritaria
           </span>
         </div>
       </div>
@@ -49,7 +49,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
             Atención Urgente (Semáforo Rojo)
           </h3>
           <p className="text-[11px] text-[#B91C1C]/90 mb-3">
-            Hermanos con ausencias prolongadas a las reuniones del grupo. Requieren visita fraterna en el hogar u oración personal.
+            Discípulos con ausencias prolongadas a las reuniones del grupo. Requieren visita fraterna en el hogar u oración personal.
           </p>
 
           <div className="space-y-2">
@@ -82,7 +82,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
             Cuidado Preventivo (Semáforo Amarillo)
           </h3>
           <p className="text-[11px] text-[#854D0E]/90 mb-3">
-            Hermanos con dos inasistencias consecutivas a su grupo.
+            Discípulos con dos inasistencias consecutivas a su grupo.
           </p>
 
           <div className="space-y-2">

@@ -177,7 +177,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <div className="flex items-center gap-2">
             <h2 className="text-base font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
               <Compass className="w-5 h-5 text-[#EA580C]" />
-              Geolocalización de Grupos de Discipulado
+              Geolocalización de Grupos de Comunión
             </h2>
             <span className="text-xs bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8] font-medium px-2 py-0.5 rounded">
               {groups.length} Grupos
@@ -319,7 +319,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
             <div className="grid grid-cols-2 gap-2 p-2 bg-[#FAFAFA] border border-[#E8E8E8] rounded-lg text-center mb-3">
               <div>
-                <p className="text-[10px] text-[#6B6B6B]">Miembros del Grupo</p>
+                <p className="text-[10px] text-[#6B6B6B]">Discípulos del Grupo</p>
                 <p className="text-sm font-serif font-bold text-[#0A0A0A]">{selectedGroup.memberCount}</p>
               </div>
               <div>

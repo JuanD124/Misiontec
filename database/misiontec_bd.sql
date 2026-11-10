@@ -201,121 +201,38 @@ CREATE INDEX ix_grupo_ubicacion     ON grupo (latitud, longitud);
 CREATE INDEX ix_sesion_fecha        ON sesion_asistencia (fecha);
 CREATE INDEX ix_evento_fecha        ON evento (fecha);
 
-INSERT INTO distrito (nombre, descripcion) VALUES
- ('Distrito Villavicencio Norte', 'Comunas del norte de la ciudad'),
- ('Distrito Villavicencio Sur',   'Comunas del sur de la ciudad');
-
-INSERT INTO zona (id_distrito, nombre) VALUES
- (1, 'Zona Norte - Barzal'),
- (1, 'Zona Centro'),
- (2, 'Zona Sur - Porfía'),
- (2, 'Zona Oriente - La Esperanza');
-
 INSERT INTO rol (nombre, descripcion, nivel_jerarquia) VALUES
- ('Pastor',             'Dirige la misión. Tiene todas las funciones y es el único que puede eliminar', 1),
+ ('Pastor',             'Dirige la misión. Tiene todas las funciones, crea los grupos de comunión y es el único que puede eliminar', 1),
  ('Asistente pastoral', 'Ayuda al pastor: hace los registros, crea encuentros y misiones y ve los informes', 2),
- ('Discipulador',       'Acompaña a su grupo: formación, asistencia, cuidado pastoral y encuentros',    3);
+ ('Discipulador',       'Acompaña a su grupo: adiestramiento, asistencia, cuidado pastoral y encuentros', 3);
 
 INSERT INTO permiso (codigo, descripcion, modulo) VALUES
  ('INICIO_VER', 'Ver el inicio con los indicadores generales', 'Inicio'),
- ('PADRON_VER', 'Ver el padrón completo de miembros y los grupos', 'Miembros'),
- ('MIEMBROS_VER', 'Ver las fichas de los miembros de su alcance', 'Miembros'),
- ('MIEMBRO_REGISTRAR', 'Registrar y editar miembros', 'Miembros'),
- ('GRUPOS_VER', 'Ver los grupos de discipulado y el mapa', 'Grupos'),
- ('DISCIPULADO_VER', 'Ver la formación y las fases de discipulado', 'Discipulado'),
- ('FASE_PROMOVER', 'Promover a un miembro a la siguiente fase', 'Discipulado'),
+ ('PADRON_VER', 'Ver el padrón completo de discípulos y los grupos', 'Discípulos'),
+ ('MIEMBROS_VER', 'Ver las fichas de los discípulos de su alcance', 'Discípulos'),
+ ('MIEMBRO_REGISTRAR', 'Registrar y editar discípulos', 'Discípulos'),
+ ('GRUPOS_VER', 'Ver los grupos de comunión y el mapa', 'Grupos'),
+ ('GRUPOS_GESTIONAR', 'Crear grupos de comunión y registrar su ubicación', 'Grupos'),
+ ('DISCIPULADO_VER', 'Ver el adiestramiento y las fases de formación', 'Adiestramiento'),
+ ('FASE_PROMOVER', 'Promover a un discípulo a la siguiente fase', 'Adiestramiento'),
  ('ASISTENCIA_TOMAR', 'Registrar la asistencia de los grupos y de los encuentros', 'Asistencia'),
  ('CUIDADO_VER', 'Ver el semáforo y las alertas de cuidado pastoral', 'Cuidado'),
  ('EVENTOS_VER', 'Ver los encuentros y misiones', 'Eventos'),
  ('EVENTO_CREAR', 'Crear encuentros y misiones', 'Eventos'),
  ('REPORTES_VER', 'Ver los informes', 'Reportes'),
- ('ACCESO_GESTIONAR', 'Crear y cambiar los accesos (contraseñas) del equipo', 'Accesos'),
- ('ELIMINAR', 'Eliminar personas y encuentros', 'Eliminación');
+ ('ACCESO_GESTIONAR', 'Crear y cambiar los accesos y roles del equipo', 'Accesos'),
+ ('ELIMINAR', 'Eliminar personas, grupos y encuentros', 'Eliminación');
 
-INSERT INTO persona (codigo, tipo_documento, numero_documento, nombres, apellidos, fecha_nacimiento, genero,
-                     telefono, correo, direccion, barrio, fase, fecha_ingreso, autoriza_datos, fecha_autorizacion) VALUES
- ('MT-0001','CC','1121800101','Carlos Andrés','Mendoza Ruiz',   '1975-03-14','M','3101234501','carlos.mendoza@misiontec.org','Cra 40 # 26-15','Barzal',      'liderazgo','2015-02-01',1,'2026-01-10 09:00:00'),
- ('MT-0002','CC','1121800102','Elena María',  'Ramos Gutiérrez','1980-07-22','F','3101234502','elena.ramos@misiontec.org',   'Cl 37 # 32-40','Centro',      'liderazgo','2017-05-12',1,'2026-01-10 09:05:00'),
- ('MT-0003','CC','1121800103','Roberto',      'Quintero Parra', '1985-11-02','M','3101234503','roberto.quintero@misiontec.org','Cra 30 # 45-10','Barzal',    'liderazgo','2018-08-20',1,'2026-01-11 10:00:00'),
- ('MT-0004','CC','1121800104','Martha Lucía', 'Morales Díaz',   '1983-01-30','F','3101234504','martha.morales@misiontec.org','Cl 15 # 22-08','Centro',      'liderazgo','2019-03-03',1,'2026-01-11 10:10:00'),
- ('MT-0005','CC','1121800105','Gabriel',      'Torres Rincón',  '1990-06-18','M','3101234505','gabriel.torres@misiontec.org','Cl 60 Sur # 18-25','Porfía',  'liderazgo','2020-01-15',1,'2026-01-12 08:30:00'),
- ('MT-0006','CC','1121800106','Andrés Felipe','Salazar Mora',   '1995-09-09','M','3101234506','andres.salazar@misiontec.org','Cra 12 # 9-30','La Esperanza','liderazgo','2021-06-01',1,'2026-01-12 08:45:00'),
- ('MT-0007','CC','1121800107','David',        'Paredes León',   '1992-04-04','M','3101234507','david.paredes@misiontec.org', 'Cra 41 # 27-02','Barzal',      'formacion','2022-02-10',1,'2026-01-13 14:00:00'),
- ('MT-0008','CC','1121800108','Sofía',        'Vargas Pinto',   '1997-12-12','F','3101234508','sofia.vargas@misiontec.org',  'Cl 38 # 30-11','Centro',      'formacion','2022-07-19',1,'2026-01-13 14:10:00'),
- ('MT-0009','CC','1121800109','Lucas',        'Benítez Ocampo', '1998-02-27','M','3101234509','lucas.benitez@misiontec.org', 'Cl 58 Sur # 20-04','Porfía',  'formacion','2023-01-08',1,'2026-01-14 11:00:00'),
- ('MT-0010','CC','1121800110','Ruth',         'Castro Herrera', '1994-08-15','F','3101234510','ruth.castro@misiontec.org',   'Cra 14 # 10-21','La Esperanza','formacion','2023-04-22',1,'2026-01-14 11:15:00'),
- ('MT-0011','CC','1121800111','Laura Valentina','Rojas Peña',   '2001-05-05','F','3201234511','laura.rojas@correo.com',      'Cra 39 # 25-60','Barzal',      'consolidacion','2025-09-14',1,'2026-01-20 16:00:00'),
- ('MT-0012','CC','1121800112','Jorge Iván',   'Cárdenas Silva', '1988-10-10','M','3201234512','jorge.cardenas@correo.com',   'Cl 28 # 41-17','Barzal',      'formacion','2024-11-03',1,'2026-01-20 16:20:00'),
- ('MT-0013','CC','1121800113','Natalia',      'Gómez Ariza',    '1999-03-21','F','3201234513','natalia.gomez@correo.com',    'Cra 42 # 30-05','Barzal',      'contacto','2026-06-02',1,'2026-06-02 19:00:00'),
- ('MT-0014','CC','1121800114','Miguel Ángel', 'Herrera Lozano', '1993-07-07','M','3201234514','miguel.herrera@correo.com',   'Cl 36 # 29-33','Centro',      'consolidacion','2025-12-01',1,'2026-01-25 10:00:00'),
- ('MT-0015','TI','1121800115','Camila',       'Ortiz Bernal',   '2009-01-19','F','3201234515',NULL,                          'Cl 34 # 31-12','Centro',      'contacto','2026-08-10',1,'2026-08-10 18:30:00'),
- ('MT-0016','CC','1121800116','Julián',       'Méndez Castaño', '1996-11-28','M','3201234516','julian.mendez@correo.com',    'Cl 61 Sur # 17-40','Porfía',  'consolidacion','2025-04-15',1,'2026-02-01 09:00:00'),
- ('MT-0017','CC','1121800117','Diana Marcela','Pulido Reyes',   '1991-02-14','F','3201234517','diana.pulido@correo.com',     'Cl 59 Sur # 19-09','Porfía',  'formacion','2024-03-30',1,'2026-02-01 09:20:00'),
- ('MT-0018','CC','1121800118','Sebastián',    'Acosta Vela',    '2000-09-01','M','3201234518','sebastian.acosta@correo.com', 'Cra 13 # 11-50','La Esperanza','contacto','2026-09-06',1,'2026-09-06 17:00:00');
+INSERT INTO persona (codigo, tipo_documento, numero_documento, nombres, apellidos, fase, fecha_ingreso,
+                     autoriza_datos, fecha_autorizacion) VALUES
+ ('MT-0001', 'CC', '1', 'Pastor',       'Principal', 'liderazgo', CURDATE(), 1, NOW()),
+ ('MT-0002', 'CC', '2', 'Asistente',    'Pastoral',  'liderazgo', CURDATE(), 1, NOW()),
+ ('MT-0003', 'CC', '3', 'Discipulador', 'Principal', 'liderazgo', CURDATE(), 1, NOW());
 
 INSERT INTO historial_discipulado (id_persona, fase, fecha_inicio, observaciones)
 SELECT id_persona, fase, fecha_ingreso, 'Registro inicial' FROM persona;
 
-INSERT INTO grupo (codigo, nombre, id_zona, id_lider, id_asistente, direccion, barrio, latitud, longitud,
-                   dia_reunion, hora_reunion, estado, fecha_apertura) VALUES
- ('GM-NOR-01','Grupo Misionero Emmanuel',   1, 3, 7,  'Cra 40 # 26-15',    'Barzal',       4.1489000, -73.6355000, 'Jueves',    '19:30', 'activo',      '2019-02-07'),
- ('GM-CEN-02','Grupo Gracia y Verdad',      2, 4, 8,  'Cl 37 # 32-40',     'Centro',       4.1512000, -73.6331000, 'Miércoles', '20:00', 'activo',      '2020-05-13'),
- ('GM-SUR-03','Semillero Monte Sión',        3, 5, 9,  'Cl 60 Sur # 18-25', 'Porfía',       4.0847000, -73.6735000, 'Viernes',   '19:00', 'observacion', '2021-03-05'),
- ('GM-ORI-04','Generación de Impacto',       4, 6, 10, 'Cra 12 # 9-30',     'La Esperanza', 4.1385000, -73.6098000, 'Sábado',    '18:00', 'activo',      '2022-08-06');
-
-UPDATE persona SET id_grupo = 1 WHERE id_persona IN (3,7,11,12,13);
-UPDATE persona SET id_grupo = 2 WHERE id_persona IN (4,8,14,15);
-UPDATE persona SET id_grupo = 3 WHERE id_persona IN (5,9,16,17);
-UPDATE persona SET id_grupo = 4 WHERE id_persona IN (6,10,18);
-UPDATE persona SET id_mentor = 1 WHERE id_persona IN (2,3,4);
-UPDATE persona SET id_mentor = 2 WHERE id_persona IN (5,6);
-UPDATE persona SET id_mentor = 3 WHERE id_persona IN (7,11,12);
-UPDATE persona SET id_mentor = 7 WHERE id_persona = 13;
-UPDATE persona SET id_mentor = 4 WHERE id_persona IN (8,14,15);
-UPDATE persona SET id_mentor = 5 WHERE id_persona IN (9,16,17);
-UPDATE persona SET id_mentor = 6 WHERE id_persona IN (10,18);
-
 INSERT INTO persona_rol (id_persona, id_rol, fecha_inicio) VALUES
- (1, 1, '2015-02-01'),
- (2, 2, '2017-05-12'),
- (3, 3, '2019-02-07'), (4, 3, '2020-05-13'), (5, 3, '2021-03-05'), (6, 3, '2022-08-06'),
- (7, 3, '2023-01-15'), (8, 3, '2023-06-01'), (9, 3, '2023-08-01'), (10, 3, '2023-09-01');
-
-INSERT INTO etiqueta (nombre) VALUES ('Nuevo creyente'), ('Joven'), ('Músico'), ('Necesita visita'), ('Servidor');
-INSERT INTO persona_etiqueta VALUES (13,1),(15,1),(15,2),(18,1),(18,2),(8,3),(13,4),(12,5),(17,5);
-
-INSERT INTO sesion_asistencia (id_grupo, fecha, tema) VALUES
- (1,'2026-09-10','El llamado de Abraham'),(1,'2026-09-17','Fe que obra'),
- (1,'2026-09-24','La oración eficaz'),(1,'2026-10-01','El fruto del Espíritu'),
- (2,'2026-09-09','El buen samaritano'),(2,'2026-09-16','Perdón y restauración'),
- (2,'2026-09-23','La gracia de Dios'),(2,'2026-09-30','Servir con alegría'),
- (3,'2026-09-11','La parábola del sembrador'),(3,'2026-09-18','Raíces profundas'),
- (3,'2026-09-25','Perseverar en la fe'),(3,'2026-10-02','La armadura de Dios'),
- (4,'2026-09-12','Identidad en Cristo'),(4,'2026-09-19','Propósito y llamado'),
- (4,'2026-09-26','Jóvenes que impactan'),(4,'2026-10-03','Amistad con Dios');
-
-INSERT INTO detalle_asistencia (id_sesion, id_persona, estado)
-SELECT s.id_sesion, p.id_persona, 'presente'
-FROM sesion_asistencia s
-JOIN persona p ON p.id_grupo = s.id_grupo
-WHERE p.fecha_ingreso <= s.fecha;
-
-UPDATE detalle_asistencia SET estado = 'falta_injustificada'
- WHERE id_persona = 13 AND id_sesion IN (2,3,4);
-UPDATE detalle_asistencia SET estado = 'falta_injustificada' WHERE id_persona = 16 AND id_sesion = 11;
-UPDATE detalle_asistencia SET estado = 'falta_justificada', observacion = 'Viaje de trabajo'
- WHERE id_persona = 16 AND id_sesion = 12;
-UPDATE detalle_asistencia SET estado = 'falta_justificada', observacion = 'Cita médica'
- WHERE id_persona = 17 AND id_sesion = 10;
-UPDATE detalle_asistencia SET estado = 'falta_injustificada' WHERE id_persona = 14 AND id_sesion = 6;
-
-INSERT INTO evento (titulo, tipo, fecha, hora, lugar, publico_objetivo, id_grupo, estado) VALUES
- ('Culto general de la misión',     'culto',       '2026-09-27','09:00','Auditorio principal, Cl 37 # 32-40','Toda la misión',   NULL, 'concluido'),
- ('Taller de discipulado',          'taller',      '2026-10-10','15:00','Salón Barzal',                      'Discipuladores',   NULL, 'programado'),
- ('Retiro juvenil Renacer',         'retiro',      '2026-10-17','08:00','Finca El Recreo, vía Restrepo',     'Jóvenes',          4,    'programado'),
- ('Vigilia de oración',             'vigilia',     '2026-10-23','21:00','Auditorio principal, Cl 37 # 32-40','Toda la misión',   NULL, 'programado'),
- ('Jornada de evangelismo Porfía',  'evangelismo', '2026-09-19','14:00','Parque de Porfía',                  'Grupo Monte Sión', 3,    'concluido');
-
-INSERT INTO asistencia_evento (id_evento, id_persona)
-SELECT 1, id_persona FROM persona WHERE id_persona NOT IN (13, 16);
-INSERT INTO asistencia_evento (id_evento, id_persona) VALUES (5,5),(5,9),(5,17);
+ (1, 1, CURDATE()),
+ (2, 2, CURDATE()),
+ (3, 3, CURDATE());

@@ -28,6 +28,11 @@ import {
   registrarPersona,
   editarPersona,
   definirAcceso,
+  quitarAcceso,
+  crearAcceso,
+  crearGrupo,
+  editarGrupo,
+  eliminarGrupo,
   cambiarFase,
   desactivarPersona,
   registrarAsistencia,
@@ -137,7 +142,32 @@ app.put('/api/personas/:id', requiere('registrarMiembro'), ruta(async (req, res)
 }));
 
 app.put('/api/personas/:id/acceso', requiere('gestionarAccesos'), ruta(async (req, res) => {
-  await definirAcceso(req.params.id, req.body?.contrasena);
+  await definirAcceso(req.params.id, req.body?.contrasena, req.body?.rol, req.sesion!.id);
+  res.json({ ok: true });
+}));
+
+app.post('/api/accesos', requiere('gestionarAccesos'), ruta(async (req, res) => {
+  const id = await crearAcceso(req.body);
+  res.status(201).json({ id: String(id) });
+}));
+
+app.delete('/api/personas/:id/acceso', requiere('gestionarAccesos'), ruta(async (req, res) => {
+  await quitarAcceso(req.params.id, req.sesion!.id);
+  res.json({ ok: true });
+}));
+
+app.post('/api/grupos', requiere('gestionarGrupos'), ruta(async (req, res) => {
+  const id = await crearGrupo(req.body);
+  res.status(201).json({ id: String(id) });
+}));
+
+app.put('/api/grupos/:id', requiere('gestionarGrupos'), ruta(async (req, res) => {
+  await editarGrupo(req.params.id, req.body);
+  res.json({ ok: true });
+}));
+
+app.delete('/api/grupos/:id', requiere('eliminar'), ruta(async (req, res) => {
+  await eliminarGrupo(req.params.id);
   res.json({ ok: true });
 }));
 
@@ -147,6 +177,9 @@ app.patch('/api/personas/:id/fase', requiere('promoverFase'), ruta(async (req, r
 }));
 
 app.delete('/api/personas/:id', requiere('eliminar'), ruta(async (req, res) => {
+  if (Number(req.params.id) === req.sesion!.id) {
+    throw new ErrorNegocio(400, 'No puedes eliminar tu propia cuenta.');
+  }
   await desactivarPersona(req.params.id);
   res.json({ ok: true });
 }));

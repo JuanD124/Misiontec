@@ -6,6 +6,7 @@ export type Funcion =
   | 'verMiembros'
   | 'registrarMiembro'
   | 'verGrupos'
+  | 'gestionarGrupos'
   | 'verDiscipulado'
   | 'promoverFase'
   | 'tomarAsistencia'
@@ -18,11 +19,12 @@ export type Funcion =
 
 export const FUNCIONES: Record<Funcion, string> = {
   verInicio: 'Ver el inicio con los indicadores generales',
-  verPadron: 'Ver el padrón completo de miembros y los grupos',
-  verMiembros: 'Ver las fichas de los miembros de su alcance',
-  registrarMiembro: 'Registrar y editar miembros',
-  verGrupos: 'Ver los grupos de discipulado y el mapa',
-  verDiscipulado: 'Ver la formación y las fases de discipulado',
+  verPadron: 'Ver el padrón completo de discípulos y los grupos',
+  verMiembros: 'Ver las fichas de los discípulos de su alcance',
+  registrarMiembro: 'Registrar y editar discípulos',
+  verGrupos: 'Ver los grupos de comunión y el mapa',
+  gestionarGrupos: 'Crear grupos de comunión y registrar su ubicación',
+  verDiscipulado: 'Ver el adiestramiento y las fases de formación',
   promoverFase: 'Promover a un miembro a la siguiente fase',
   tomarAsistencia: 'Registrar la asistencia de los grupos y de los encuentros',
   verCuidado: 'Ver el semáforo y las alertas de cuidado pastoral',
@@ -30,7 +32,7 @@ export const FUNCIONES: Record<Funcion, string> = {
   gestionarEventos: 'Crear encuentros y misiones',
   verReportes: 'Ver los informes',
   gestionarAccesos: 'Crear y cambiar los accesos (contraseñas) del equipo',
-  eliminar: 'Eliminar personas y encuentros',
+  eliminar: 'Eliminar personas, grupos y encuentros',
 };
 
 export interface InfoRol {
@@ -48,9 +50,9 @@ export const ROLES: InfoRol[] = [
     nombre: 'Pastor',
     nombreEnBase: 'Pastor',
     nivel: 1,
-    descripcion: 'Dirige la misión. Tiene todas las funciones y es el único que puede eliminar.',
+    descripcion: 'Dirige la misión. Tiene todas las funciones, es el único que crea grupos de comunión y el único que puede eliminar.',
     funciones: [
-      'verInicio', 'verPadron', 'verMiembros', 'registrarMiembro', 'verGrupos', 'verDiscipulado', 'promoverFase',
+      'verInicio', 'verPadron', 'verMiembros', 'registrarMiembro', 'verGrupos', 'gestionarGrupos', 'verDiscipulado', 'promoverFase',
       'tomarAsistencia', 'verCuidado', 'verEventos', 'gestionarEventos', 'verReportes', 'gestionarAccesos', 'eliminar',
     ],
   },
@@ -70,7 +72,7 @@ export const ROLES: InfoRol[] = [
     nombre: 'Discipulador',
     nombreEnBase: 'Discipulador',
     nivel: 3,
-    descripcion: 'Acompaña a su grupo: ve la formación y el discipulado, registra la asistencia, el cuidado pastoral y los encuentros.',
+    descripcion: 'Acompaña a su grupo: ve el adiestramiento, registra la asistencia, el cuidado pastoral y los encuentros.',
     funciones: ['verMiembros', 'verDiscipulado', 'tomarAsistencia', 'verCuidado', 'verEventos'],
   },
 ];
@@ -84,6 +86,7 @@ export const VISTAS: Record<string, Funcion> = {
   alertas: 'verCuidado',
   eventos: 'verEventos',
   reportes: 'verReportes',
+  accesos: 'gestionarAccesos',
 };
 
 export const infoRol = (rol: UserRole): InfoRol => ROLES.find((r) => r.clave === rol) ?? ROLES[ROLES.length - 1];

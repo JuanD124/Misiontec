@@ -32,6 +32,7 @@ export interface Person {
   enrollmentDate: string;
   tags: string[];
   hasAccess?: boolean;
+  accessRole?: UserRole;
 }
 
 export interface MissionaryGroup {
@@ -39,10 +40,13 @@ export interface MissionaryGroup {
   name: string;
   code: string;
   leaderName: string;
+  leaderId: string;
   leaderPhone: string;
   assistantName: string;
+  assistantId: string;
   zone: string;
   district: string;
+  neighborhood: string;
   address: string;
   lat: number;
   lng: number;

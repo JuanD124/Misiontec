@@ -5,6 +5,7 @@ import type {
   MissionEvent,
   DiscipleshipPhase,
   SesionUsuario,
+  UserRole,
 } from '../types';
 
 export class ErrorApi extends Error {
@@ -72,6 +73,30 @@ export interface DatosEvento {
   groupId?: string;
 }
 
+export interface DatosAcceso {
+  fullName: string;
+  dni: string;
+  phone?: string;
+  email?: string;
+  role: UserRole;
+  password: string;
+}
+
+export interface DatosGrupo {
+  name: string;
+  district: string;
+  zone: string;
+  neighborhood: string;
+  address: string;
+  lat: number | '';
+  lng: number | '';
+  meetingDay: string;
+  meetingTime: string;
+  leaderId: string;
+  assistantId: string;
+  status: string;
+}
+
 export interface DatosIniciales {
   people: Person[];
   groups: MissionaryGroup[];
@@ -97,8 +122,21 @@ export const api = {
 
   historial: (personId: string) => request<HistorialFase[]>(`/api/personas/${personId}/historial`),
 
-  definirAcceso: (personId: string, contrasena: string) =>
-    request(`/api/personas/${personId}/acceso`, { method: 'PUT', body: JSON.stringify({ contrasena }) }),
+  definirAcceso: (personId: string, contrasena: string, rol: UserRole) =>
+    request(`/api/personas/${personId}/acceso`, { method: 'PUT', body: JSON.stringify({ contrasena, rol }) }),
+
+  crearAcceso: (data: DatosAcceso) =>
+    request<{ id: string }>('/api/accesos', { method: 'POST', body: JSON.stringify(data) }),
+
+  quitarAcceso: (personId: string) => request(`/api/personas/${personId}/acceso`, { method: 'DELETE' }),
+
+  crearGrupo: (data: DatosGrupo) =>
+    request<{ id: string }>('/api/grupos', { method: 'POST', body: JSON.stringify(data) }),
+
+  editarGrupo: (groupId: string, data: DatosGrupo) =>
+    request(`/api/grupos/${groupId}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  eliminarGrupo: (groupId: string) => request(`/api/grupos/${groupId}`, { method: 'DELETE' }),
 
   cambiarFase: (personId: string, phase: DiscipleshipPhase) =>
     request(`/api/personas/${personId}/fase`, { method: 'PATCH', body: JSON.stringify({ phase }) }),

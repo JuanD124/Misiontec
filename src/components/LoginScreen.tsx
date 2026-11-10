@@ -42,7 +42,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             Cuidado y seguimiento <span className="text-[#FB923C]">de cada discípulo</span>
           </h1>
           <p className="mt-4 text-sm text-[#D4D4D4] max-w-md leading-relaxed">
-            Grupos de discipulado, asistencia, formación y acompañamiento pastoral en un solo lugar.
+            Grupos de comunión, asistencia, formación y acompañamiento pastoral en un solo lugar.
           </p>
         </div>
 
@@ -73,7 +73,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               required
               value={documento}
               onChange={(e) => setDocumento(e.target.value.replace(/\D/g, ''))}
-              placeholder="Ej. 1121800101"
+              placeholder="Tu número de documento"
               className="w-full px-3.5 py-2.5 bg-white border border-[#D4D4D4] rounded-lg text-sm text-[#0A0A0A] focus:outline-none focus:border-[#EA580C] focus:ring-2 focus:ring-[#EA580C]/20"
             />
           </div>

@@ -39,7 +39,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             Informes Pastorales
           </h1>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
-            Consolidados de la misión y detalle de hermanos que requieren acompañamiento.
+            Consolidados de la misión y detalle de discípulos que requieren acompañamiento.
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <FileText className="w-5 h-5 text-[#EA580C] mb-2" />
           <h3 className="text-xs font-serif font-bold text-[#0A0A0A]">Consolidado de Misión</h3>
           <p className="text-[11px] text-[#6B6B6B] mt-1">
-            Resumen de {people.length} miembros y {groups.length} grupos con su asistencia.
+            Resumen de {people.length} discípulos y {groups.length} grupos con su asistencia.
           </p>
         </div>
 
@@ -96,7 +96,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <BarChart2 className="w-5 h-5 text-[#DC2626] mb-2" />
           <h3 className="text-xs font-serif font-bold text-[#0A0A0A]">Informe de Cuidado & Ausencias</h3>
           <p className="text-[11px] text-[#6B6B6B] mt-1">
-            Hermanos con inasistencias consecutivas a su grupo ({peopleInCare.length} en total).
+            Discípulos con inasistencias consecutivas a su grupo ({peopleInCare.length} en total).
           </p>
         </div>
       </div>
@@ -113,7 +113,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <th className="py-2.5 px-4.5">Grupo</th>
                   <th className="py-2.5 px-4.5">Zona</th>
                   <th className="py-2.5 px-4.5">Líder</th>
-                  <th className="py-2.5 px-4.5">Miembros</th>
+                  <th className="py-2.5 px-4.5">Discípulos</th>
                   <th className="py-2.5 px-4.5">Asistencia</th>
                   <th className="py-2.5 px-4.5">En atención</th>
                 </tr>
@@ -135,7 +135,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FAFAFA] text-[#6B6B6B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8E8E8]">
                 <tr>
-                  <th className="py-2.5 px-4.5">Hermano</th>
+                  <th className="py-2.5 px-4.5">Discípulo</th>
                   <th className="py-2.5 px-4.5">Grupo</th>
                   <th className="py-2.5 px-4.5">Mentor</th>
                   <th className="py-2.5 px-4.5">Faltas seguidas</th>
@@ -147,7 +147,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 {peopleInCare.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-[#8A8A8A] italic">
-                      Todos los hermanos asisten con regularidad.
+                      Todos los discípulos asisten con regularidad.
                     </td>
                   </tr>
                 ) : (

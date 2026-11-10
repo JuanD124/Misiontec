@@ -124,7 +124,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({ isOpen, onClos
                 {editando ? `Editar datos de ${personToEdit?.fullName}` : 'Registrar nuevo miembro'}
               </h2>
               <p className="text-xs text-[#6B6B6B]">
-                {editando ? 'Actualiza los datos de contacto y el grupo.' : 'Se agrega al padrón y a un grupo de discipulado.'}
+                {editando ? 'Actualiza los datos de contacto y el grupo.' : 'Se agrega al padrón y a un grupo de comunión.'}
               </p>
             </div>
           </div>
@@ -192,7 +192,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({ isOpen, onClos
           <div className="pt-2 border-t border-[#E8E8E8]">
             <h3 className="font-bold text-[#0A0A0A] mb-2 flex items-center gap-1.5">
               <Church className="w-4 h-4 text-[#EA580C]" />
-              Grupo de discipulado
+              Grupo de comunión
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

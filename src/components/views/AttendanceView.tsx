@@ -31,7 +31,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             Registro Fraterno & Asistencia Semanal
           </h1>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
-            Planillas de comunión por grupo de discipulado con actualización inmediata de inasistencias y alertas.
+            Planillas de comunión por grupo de comunión con actualización inmediata de inasistencias y alertas.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               </div>
               <div className="flex items-center justify-between text-[10px] text-[#6B6B6B] mt-1.5">
                 <span>{grp.zone}</span>
-                <span>{grp.memberCount} hermanos</span>
+                <span>{grp.memberCount} discípulos</span>
               </div>
             </div>
           ))}

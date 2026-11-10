@@ -2,7 +2,7 @@ import { pool, withTransaction } from './db';
 import { FASES, separarNombre } from './mappers';
 import { CORREO_VALIDO, ESTADOS_ASISTENCIA } from './calculos';
 import { ErrorNegocio } from './errores';
-import { rolDesdeBase } from '../src/data/roles';
+import { rolDesdeBase, ROLES } from '../src/data/roles';
 import { hashClave, verificarClave, CLAVE_MINIMA } from './sesion';
 import type { Alcance } from './consultas';
 
@@ -153,13 +153,198 @@ export async function editarPersona(id: string, b: any): Promise<void> {
   await pool.query(`UPDATE persona SET ${campos.join(', ')} WHERE id_persona = ? AND activo = 1`, [...valores, id]);
 }
 
-export async function definirAcceso(id: string, clave: unknown): Promise<void> {
+export async function definirAcceso(id: string, clave: unknown, rol: unknown, idQuienPide: number): Promise<void> {
+  const hayClaveNueva = typeof clave === 'string' && clave.length > 0;
+  if (hayClaveNueva && (clave as string).length < CLAVE_MINIMA) {
+    throw new ErrorNegocio(400, `La contraseña debe tener al menos ${CLAVE_MINIMA} caracteres.`);
+  }
+  if (clave !== undefined && clave !== null && typeof clave !== 'string') {
+    throw new ErrorNegocio(400, 'La contraseña no es válida.');
+  }
+  const infoRol = ROLES.find((r) => r.clave === rol);
+  if (!infoRol) throw new ErrorNegocio(400, 'Elige el rol que tendrá esta persona.');
+  if (Number(id) === idQuienPide && infoRol.clave !== 'pastor') {
+    throw new ErrorNegocio(400, 'No puedes quitarte a ti mismo el rol de Pastor.');
+  }
+
+  await withTransaction(async (conn) => {
+    const [[persona]]: any = await conn.query(
+      'SELECT id_persona, contrasena_hash FROM persona WHERE id_persona = ? AND activo = 1', [id]);
+    if (!persona) throw new ErrorNegocio(404, 'La persona no existe.');
+    if (!hayClaveNueva && !persona.contrasena_hash) {
+      throw new ErrorNegocio(400, 'Escribe una contraseña para crear el acceso.');
+    }
+    const [[rolBase]]: any = await conn.query('SELECT id_rol FROM rol WHERE nombre = ? AND activo = 1', [infoRol.nombreEnBase]);
+    if (!rolBase) throw new ErrorNegocio(500, 'El rol no existe en la base de datos.');
+
+    if (hayClaveNueva) {
+      await conn.query('UPDATE persona SET contrasena_hash = ? WHERE id_persona = ?', [hashClave(clave as string), id]);
+    }
+    await conn.query(
+      'UPDATE persona_rol SET activo = 0, fecha_fin = CURDATE() WHERE id_persona = ? AND activo = 1 AND id_rol <> ?',
+      [id, rolBase.id_rol]);
+    const [[vigente]]: any = await conn.query(
+      'SELECT id_persona_rol FROM persona_rol WHERE id_persona = ? AND id_rol = ? AND activo = 1', [id, rolBase.id_rol]);
+    if (!vigente) {
+      await conn.query(
+        `INSERT INTO persona_rol (id_persona, id_rol, fecha_inicio) VALUES (?, ?, CURDATE())
+         ON DUPLICATE KEY UPDATE activo = 1, fecha_fin = NULL`,
+        [id, rolBase.id_rol]);
+    }
+  });
+}
+
+export async function crearAcceso(b: any): Promise<number> {
+  const nombreCompleto = String(b.fullName ?? '').trim();
+  const documento = String(b.dni ?? '').trim();
+  const clave = b.password;
+  const infoRol = ROLES.find((r) => r.clave === b.role);
+
+  if (nombreCompleto.length < 3) throw new ErrorNegocio(400, 'Escribe el nombre completo de la persona.');
+  if (!documento) throw new ErrorNegocio(400, 'Escribe el número de documento: es con el que va a iniciar sesión.');
+  if (documento.length > 20) throw new ErrorNegocio(400, 'El documento es demasiado largo (máximo 20 caracteres).');
+  if (!infoRol) throw new ErrorNegocio(400, 'Elige el rol: Asistente pastoral, Discipulador o Pastor.');
   if (typeof clave !== 'string' || clave.length < CLAVE_MINIMA) {
     throw new ErrorNegocio(400, `La contraseña debe tener al menos ${CLAVE_MINIMA} caracteres.`);
   }
-  const [r]: any = await pool.query(
-    'UPDATE persona SET contrasena_hash = ? WHERE id_persona = ? AND activo = 1', [hashClave(clave), id]);
-  if (r.affectedRows === 0) throw new ErrorNegocio(404, 'La persona no existe.');
+  if (b.email && !CORREO_VALIDO.test(b.email)) throw new ErrorNegocio(400, 'El correo no tiene un formato válido.');
+
+  const { nombres, apellidos } = separarNombre(nombreCompleto);
+
+  return withTransaction(async (conn) => {
+    const [[repetido]]: any = await conn.query(
+      "SELECT codigo FROM persona WHERE tipo_documento = 'CC' AND numero_documento = ?", [documento]);
+    if (repetido) throw new ErrorNegocio(409, `Ya existe una persona con el documento ${documento} (${repetido.codigo}). Búscala en Discípulos y créale el acceso desde su ficha.`);
+
+    const [[rolBase]]: any = await conn.query('SELECT id_rol FROM rol WHERE nombre = ? AND activo = 1', [infoRol.nombreEnBase]);
+    if (!rolBase) throw new ErrorNegocio(500, 'El rol no existe en la base de datos.');
+
+    const [[{ siguiente }]]: any = await conn.query(
+      "SELECT CONCAT('MT-', LPAD(IFNULL(MAX(id_persona), 0) + 1, 4, '0')) AS siguiente FROM persona");
+    const [r]: any = await conn.query(
+      `INSERT INTO persona (codigo, numero_documento, nombres, apellidos, telefono, correo, fase, fecha_ingreso,
+                            autoriza_datos, fecha_autorizacion, contrasena_hash)
+       VALUES (?, ?, ?, ?, ?, ?, 'liderazgo', CURDATE(), 1, NOW(), ?)`,
+      [siguiente, documento, nombres, apellidos, b.phone || null, b.email || null, hashClave(clave)]);
+    await conn.query(
+      `INSERT INTO historial_discipulado (id_persona, fase, fecha_inicio, observaciones)
+       VALUES (?, 'liderazgo', CURDATE(), 'Registro inicial')`, [r.insertId]);
+    await conn.query('INSERT INTO persona_rol (id_persona, id_rol, fecha_inicio) VALUES (?, ?, CURDATE())', [r.insertId, rolBase.id_rol]);
+    return r.insertId;
+  });
+}
+
+export async function quitarAcceso(id: string, idQuienPide: number): Promise<void> {
+  if (Number(id) === idQuienPide) throw new ErrorNegocio(400, 'No puedes quitarte tu propio acceso.');
+  await withTransaction(async (conn) => {
+    const [r]: any = await conn.query(
+      'UPDATE persona SET contrasena_hash = NULL WHERE id_persona = ? AND activo = 1', [id]);
+    if (r.affectedRows === 0) throw new ErrorNegocio(404, 'La persona no existe.');
+    await conn.query('UPDATE persona_rol SET activo = 0, fecha_fin = CURDATE() WHERE id_persona = ? AND activo = 1', [id]);
+  });
+}
+
+const DIAS_REUNION = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const ESTADOS_GRUPO = ['activo', 'observacion', 'inactivo'];
+
+function validarGrupo(b: any) {
+  const nombre = String(b.name ?? '').trim();
+  const direccion = String(b.address ?? '').trim();
+  const distrito = String(b.district ?? '').trim();
+  const zona = String(b.zone ?? '').trim();
+  const barrio = String(b.neighborhood ?? '').trim();
+  const lat = Number(b.lat);
+  const lng = Number(b.lng);
+
+  if (nombre.length < 3) throw new ErrorNegocio(400, 'Escribe el nombre del grupo (mínimo 3 letras).');
+  if (nombre.length > 100) throw new ErrorNegocio(400, 'El nombre del grupo es demasiado largo (máximo 100 caracteres).');
+  if (!direccion) throw new ErrorNegocio(400, 'Escribe la dirección donde se reúne el grupo.');
+  if (direccion.length > 150) throw new ErrorNegocio(400, 'La dirección es demasiado larga (máximo 150 caracteres).');
+  if (!distrito || !zona) throw new ErrorNegocio(400, 'Indica el distrito y la zona del grupo.');
+  if (distrito.length > 100 || zona.length > 100) throw new ErrorNegocio(400, 'El distrito o la zona son demasiado largos.');
+  if (barrio.length > 80) throw new ErrorNegocio(400, 'El barrio es demasiado largo (máximo 80 caracteres).');
+  if (b.lat === '' || b.lat == null || b.lng === '' || b.lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    throw new ErrorNegocio(400, 'Marca la ubicación del grupo en el mapa.');
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    throw new ErrorNegocio(400, 'La ubicación no es válida (latitud entre -90 y 90, longitud entre -180 y 180).');
+  }
+  if (!DIAS_REUNION.includes(b.meetingDay)) throw new ErrorNegocio(400, 'Elige el día de reunión.');
+  if (!/^\d{2}:\d{2}$/.test(String(b.meetingTime ?? ''))) throw new ErrorNegocio(400, 'La hora de reunión no es válida.');
+  const estado = b.status === undefined || b.status === '' ? 'activo' : b.status;
+  if (!ESTADOS_GRUPO.includes(estado)) throw new ErrorNegocio(400, 'El estado del grupo no es válido.');
+
+  return {
+    nombre, direccion, distrito, zona, barrio: barrio || null,
+    lat: Number(lat.toFixed(7)), lng: Number(lng.toFixed(7)),
+    dia: b.meetingDay as string, hora: b.meetingTime as string, estado: estado as string,
+    idLider: b.leaderId ? Number(b.leaderId) : null,
+    idAsistente: b.assistantId ? Number(b.assistantId) : null,
+  };
+}
+
+async function buscarOCrearZona(conn: any, distrito: string, zona: string): Promise<number> {
+  await conn.query('INSERT IGNORE INTO distrito (nombre) VALUES (?)', [distrito]);
+  const [[d]]: any = await conn.query('SELECT id_distrito FROM distrito WHERE nombre = ?', [distrito]);
+  await conn.query('INSERT IGNORE INTO zona (id_distrito, nombre) VALUES (?, ?)', [d.id_distrito, zona]);
+  const [[z]]: any = await conn.query('SELECT id_zona FROM zona WHERE id_distrito = ? AND nombre = ?', [d.id_distrito, zona]);
+  return z.id_zona;
+}
+
+async function comprobarPersonaActiva(conn: any, id: number | null, etiqueta: string) {
+  if (id === null) return;
+  const [[p]]: any = await conn.query('SELECT id_persona FROM persona WHERE id_persona = ? AND activo = 1', [id]);
+  if (!p) throw new ErrorNegocio(400, `${etiqueta} no existe o fue eliminado.`);
+}
+
+export async function crearGrupo(b: any): Promise<number> {
+  const g = validarGrupo(b);
+  return withTransaction(async (conn) => {
+    await comprobarPersonaActiva(conn, g.idLider, 'El líder elegido');
+    await comprobarPersonaActiva(conn, g.idAsistente, 'El asistente elegido');
+    const idZona = await buscarOCrearZona(conn, g.distrito, g.zona);
+    const [[{ siguiente }]]: any = await conn.query(
+      "SELECT CONCAT('GC-', LPAD(IFNULL(MAX(id_grupo), 0) + 1, 3, '0')) AS siguiente FROM grupo");
+    const [r]: any = await conn.query(
+      `INSERT INTO grupo (codigo, nombre, id_zona, id_lider, id_asistente, direccion, barrio, latitud, longitud,
+                          dia_reunion, hora_reunion, estado, fecha_apertura)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE())`,
+      [siguiente, g.nombre, idZona, g.idLider, g.idAsistente, g.direccion, g.barrio, g.lat, g.lng, g.dia, g.hora, g.estado]);
+    return r.insertId;
+  });
+}
+
+export async function editarGrupo(id: string, b: any): Promise<void> {
+  const g = validarGrupo(b);
+  await withTransaction(async (conn) => {
+    const [[actual]]: any = await conn.query('SELECT id_lider FROM grupo WHERE id_grupo = ? AND activo = 1', [id]);
+    if (!actual) throw new ErrorNegocio(404, 'El grupo no existe.');
+    await comprobarPersonaActiva(conn, g.idLider, 'El líder elegido');
+    await comprobarPersonaActiva(conn, g.idAsistente, 'El asistente elegido');
+    const idZona = await buscarOCrearZona(conn, g.distrito, g.zona);
+    await conn.query(
+      `UPDATE grupo SET nombre = ?, id_zona = ?, id_lider = ?, id_asistente = ?, direccion = ?, barrio = ?,
+              latitud = ?, longitud = ?, dia_reunion = ?, hora_reunion = ?, estado = ? WHERE id_grupo = ?`,
+      [g.nombre, idZona, g.idLider, g.idAsistente, g.direccion, g.barrio, g.lat, g.lng, g.dia, g.hora, g.estado, id]);
+    if (g.idLider !== (actual.id_lider ?? null)) {
+      await conn.query(
+        'UPDATE persona SET id_mentor = ? WHERE id_grupo = ? AND activo = 1 AND (id_mentor IS NULL OR id_mentor = ?)',
+        [g.idLider, id, actual.id_lider ?? 0]);
+    }
+  });
+}
+
+export async function eliminarGrupo(id: string): Promise<void> {
+  await withTransaction(async (conn) => {
+    const [[g]]: any = await conn.query('SELECT id_grupo FROM grupo WHERE id_grupo = ? AND activo = 1', [id]);
+    if (!g) throw new ErrorNegocio(404, 'El grupo no existe.');
+    const [[{ total }]]: any = await conn.query(
+      'SELECT COUNT(*) AS total FROM persona WHERE id_grupo = ? AND activo = 1', [id]);
+    if (total > 0) {
+      throw new ErrorNegocio(409, `Este grupo tiene ${total} ${total === 1 ? 'discípulo' : 'discípulos'}. Pásalos a otro grupo antes de eliminarlo.`);
+    }
+    await conn.query('UPDATE grupo SET activo = 0 WHERE id_grupo = ?', [id]);
+  });
 }
 
 export async function eliminarEvento(idEvento: string): Promise<void> {

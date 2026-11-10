@@ -55,7 +55,7 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
           <div className="flex items-center gap-2">
             <h2 className="text-base font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-[#EA580C]" />
-              Crecimiento Espiritual & Fases de Discipulado
+              Adiestramiento & Fases de Formación
             </h2>
             <span className="text-xs bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8] font-medium px-2 py-0.5 rounded">
               Camino de Fe
@@ -107,7 +107,7 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
 
                 <div className="mt-3 flex items-baseline justify-between">
                   <span className="text-2xl font-serif font-bold text-[#0A0A0A]">{count}</span>
-                  <span className="text-[10px] text-[#6B6B6B]">hermanos</span>
+                  <span className="text-[10px] text-[#6B6B6B]">discípulos</span>
                 </div>
 
                 <div className="w-full bg-[#FAFAFA] border border-[#E8E8E8] h-1.5 rounded-full overflow-hidden mt-2">

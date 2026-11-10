@@ -10,7 +10,7 @@ async function main() {
 
   if (!process.argv.includes('--confirmar')) {
     console.log(`Esto BORRA y vuelve a crear la base "misiontec" en ${opciones.host}:${opciones.port}`);
-    console.log(`con las tablas y los datos de ejemplo de ${archivo}.`);
+    console.log(`y la deja VACÍA (solo las tablas, los roles y los 3 accesos iniciales de ${archivo}).`);
     console.log('Si estás seguro, ejecuta:  npm run db:cargar -- --confirmar');
     process.exit(1);
   }

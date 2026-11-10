@@ -16,9 +16,9 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
   const totalPeople = people.length;
   const activeGroups = groups.filter(g => g.status === 'active').length;
   
-  const averageAttendance = (
-    groups.reduce((acc, curr) => acc + curr.averageAttendanceRate, 0) / groups.length
-  ).toFixed(1);
+  const averageAttendance = groups.length === 0
+    ? '0.0'
+    : (groups.reduce((acc, curr) => acc + curr.averageAttendanceRate, 0) / groups.length).toFixed(1);
 
   const criticalCount = people.filter(p => p.status === 'red').length;
 
@@ -30,7 +30,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         className="bg-white border border-[#E8E8E8] rounded-xl p-4.5 shadow-xs hover:border-[#A3A3A3] transition-all cursor-pointer group"
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-[#6B6B6B]">Total del Rebaño</span>
+          <span className="text-xs font-semibold text-[#6B6B6B]">Total de Discípulos</span>
           <div className="w-9 h-9 rounded-lg bg-[#FAFAFA] text-[#EA580C] border border-[#E8E8E8] flex items-center justify-center group-hover:bg-[#F2F2F2] transition-colors">
             <Users className="w-4 h-4" />
           </div>
@@ -42,7 +42,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
           </span>
         </div>
         <p className="text-[11px] text-[#6B6B6B]">
-          {totalPeople} hermanos en seguimiento directo
+          {totalPeople} discípulos en seguimiento directo
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         className="bg-white border border-[#E8E8E8] rounded-xl p-4.5 shadow-xs hover:border-[#A3A3A3] transition-all group"
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-[#6B6B6B]">Grupos de Discipulado</span>
+          <span className="text-xs font-semibold text-[#6B6B6B]">Grupos de Comunión</span>
           <div className="w-9 h-9 rounded-lg bg-[#FAFAFA] text-[#EA580C] border border-[#E8E8E8] flex items-center justify-center group-hover:bg-[#F2F2F2] transition-colors">
             <Church className="w-4 h-4" />
           </div>
@@ -59,7 +59,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         <div className="flex items-baseline gap-2 mb-1">
           <span className="text-2xl font-serif font-bold text-[#0A0A0A] tracking-tight">{groups.length}</span>
           <span className="text-xs font-medium text-[#6B6B6B]">
-            grupos de discipulado
+            grupos de comunión
           </span>
         </div>
         <p className="text-[11px] text-[#6B6B6B]">
@@ -108,7 +108,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         <div className="flex items-baseline gap-2 mb-1">
           <span className="text-2xl font-serif font-bold text-[#B91C1C] tracking-tight">{criticalCount}</span>
           <span className="text-xs font-medium text-[#B91C1C]">
-            hermanos
+            discípulos
           </span>
         </div>
         <p className="text-[11px] text-[#DC2626]">

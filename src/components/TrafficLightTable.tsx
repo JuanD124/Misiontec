@@ -87,10 +87,10 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
           <div className="flex items-center gap-2">
             <h2 className="text-base font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
               <HeartHandshake className="w-5 h-5 text-[#EA580C]" />
-              Cuidado Pastoral & Acompañamiento del Rebaño
+              Cuidado Pastoral & Acompañamiento de los Discípulos
             </h2>
             <span className="text-xs bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8] px-2 py-0.5 rounded font-medium">
-              {filteredPeople.length} hermanos
+              {filteredPeople.length} discípulos
             </span>
           </div>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
@@ -98,7 +98,7 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-1 bg-[#FAFAFA] border border-[#E8E8E8] p-1 rounded-lg self-start md:self-auto">
+        <div className="flex flex-wrap items-center gap-1 bg-[#FAFAFA] border border-[#E8E8E8] p-1 rounded-lg self-start md:self-auto">
           <button
             onClick={() => onStatusFilterChange('all')}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
@@ -176,12 +176,61 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="md:hidden divide-y divide-[#F2F2F2]">
+        {filteredPeople.length === 0 ? (
+          <p className="p-8 text-center text-xs text-[#8A8A8A] italic">
+            No se encontraron registros con los filtros seleccionados.
+          </p>
+        ) : (
+          filteredPeople.map((person) => {
+            const isRed = person.status === 'red';
+            const isYellow = person.status === 'yellow';
+            return (
+              <button
+                key={person.id}
+                onClick={() => onOpenPersonDetailModal(person)}
+                className={`w-full text-left p-4 flex items-start gap-3 active:bg-[#FAFAFA] ${isRed ? 'bg-[#FEF2F2]' : ''}`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 text-white ${
+                  isRed ? 'bg-[#DC2626]' : isYellow ? 'bg-[#CA8A04]' : 'bg-[#16A34A]'
+                }`}>
+                  {person.fullName.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm text-[#0A0A0A] leading-snug">{person.fullName}</p>
+                  <p className="text-[11px] text-[#6B6B6B] mt-0.5">{person.code} • {person.groupName}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {getStatusBadge(person.status, person.consecutiveAbsences)}
+                    {getPhaseBadge(person.phase)}
+                  </div>
+                  <p className="mt-2 text-[11px] text-[#404040] flex items-center gap-1.5">
+                    <Calendar className="w-3 h-3 text-[#8A8A8A]" />
+                    {person.lastAttendanceDate}
+                    {person.consecutiveAbsences > 0 ? (
+                      <span className="text-[#B91C1C] font-medium">
+                        · {person.consecutiveAbsences} {person.consecutiveAbsences === 1 ? 'falta' : 'faltas seguidas'}
+                      </span>
+                    ) : (
+                      <span className="text-[#16A34A]">· Asistencia puntual</span>
+                    )}
+                  </p>
+                  <p className="mt-1 text-[11px] text-[#6B6B6B] flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-[#EA580C]" /> {person.mentorName} · {person.phone}
+                  </p>
+                </div>
+                <ExternalLink className="w-4 h-4 text-[#A3A3A3] shrink-0 mt-1" />
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-[#FAFAFA] text-[#6B6B6B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8E8E8]">
             <tr>
-              <th className="py-3 px-4.5">Hermano / Código</th>
-              <th className="py-3 px-4.5">Grupo de Discipulado</th>
+              <th className="py-3 px-4.5">Discípulo / Código</th>
+              <th className="py-3 px-4.5">Grupo de Comunión</th>
               <th className="py-3 px-4.5">Fase de Formación</th>
               <th className="py-3 px-4.5">Última Asistencia</th>
               <th className="py-3 px-4.5">Estado Pastoral</th>

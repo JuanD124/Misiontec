@@ -11,16 +11,18 @@ import {
   CheckCircle2,
   Trash2,
 } from 'lucide-react';
-import { Person, DiscipleshipPhase } from '../../types';
+import { Person, DiscipleshipPhase, UserRole } from '../../types';
 import { api, HistorialFase } from '../../services/api';
 import { NOMBRE_FASE, fechaCorta } from '../../utils/formato';
+import { ROLES, infoRol } from '../../data/roles';
 
 interface PersonDetailModalProps {
   person: Person | null;
   onClose: () => void;
   onPromotePhase?: (personId: string, nextPhase: DiscipleshipPhase) => void;
   onEdit?: (person: Person) => void;
-  onSetAccess?: (personId: string, clave: string) => Promise<void>;
+  onSetAccess?: (personId: string, clave: string, rol: UserRole) => Promise<void>;
+  onRemoveAccess?: (personId: string) => Promise<void>;
   onDelete?: (person: Person) => void;
 }
 
@@ -30,10 +32,12 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
   onPromotePhase,
   onEdit,
   onSetAccess,
+  onRemoveAccess,
   onDelete,
 }) => {
   const [historial, setHistorial] = useState<HistorialFase[] | null>(null);
   const [clave, setClave] = useState('');
+  const [rolElegido, setRolElegido] = useState<UserRole>('discipulador');
   const [mensajeAcceso, setMensajeAcceso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
   const [guardandoAcceso, setGuardandoAcceso] = useState(false);
 
@@ -41,6 +45,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
     setHistorial(null);
     setClave('');
     setMensajeAcceso(null);
+    setRolElegido(person?.accessRole ?? 'discipulador');
     if (!person) return;
     let vigente = true;
     api.historial(person.id).then((h) => vigente && setHistorial(h)).catch(() => vigente && setHistorial([]));
@@ -66,9 +71,23 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
     setGuardandoAcceso(true);
     setMensajeAcceso(null);
     try {
-      await onSetAccess(person.id, clave);
+      await onSetAccess(person.id, clave, rolElegido);
       setClave('');
-      setMensajeAcceso({ tipo: 'ok', texto: 'Listo: ya puede entrar con su documento y esa contraseña.' });
+      setMensajeAcceso({ tipo: 'ok', texto: `Listo: ya puede entrar como ${infoRol(rolElegido).nombre} con su documento y esa contraseña.` });
+    } catch (err) {
+      setMensajeAcceso({ tipo: 'error', texto: (err as Error).message });
+    } finally {
+      setGuardandoAcceso(false);
+    }
+  };
+
+  const quitarAcceso = async () => {
+    if (!onRemoveAccess) return;
+    setGuardandoAcceso(true);
+    setMensajeAcceso(null);
+    try {
+      await onRemoveAccess(person.id);
+      setMensajeAcceso({ tipo: 'ok', texto: 'Se quitó el acceso a la aplicación.' });
     } catch (err) {
       setMensajeAcceso({ tipo: 'error', texto: (err as Error).message });
     } finally {
@@ -199,13 +218,23 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
                 <KeyRound className="w-4 h-4 text-[#EA580C]" />
                 Acceso a la aplicación
                 <span className={`ml-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${person.hasAccess ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#F2F2F2] text-[#6B6B6B]'}`}>
-                  {person.hasAccess ? 'Tiene acceso' : 'Sin acceso'}
+                  {person.hasAccess ? `Tiene acceso${person.accessRole ? ` · ${infoRol(person.accessRole).nombre}` : ''}` : 'Sin acceso'}
                 </span>
               </h4>
               <p className="text-[11px] text-[#6B6B6B]">
-                Entra con su documento ({person.dni}) y la contraseña que le definas aquí (mínimo 8 caracteres).
+                Entra con su documento ({person.dni}) y la contraseña que le definas aquí (mínimo 8 caracteres). El rol decide qué puede ver y hacer.
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
+                <select
+                  value={rolElegido}
+                  onChange={(e) => setRolElegido(e.target.value as UserRole)}
+                  className="px-3 py-2 bg-white border border-[#E0E0E0] rounded-lg focus:outline-none focus:border-[#EA580C] text-[#0A0A0A]"
+                  aria-label="Rol en la aplicación"
+                >
+                  {ROLES.map((r) => (
+                    <option key={r.clave} value={r.clave}>{r.nombre}</option>
+                  ))}
+                </select>
                 <input
                   type="text"
                   value={clave}
@@ -219,9 +248,19 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
                   disabled={guardandoAcceso || clave.length === 0}
                   className="px-4 py-2 bg-[#0A0A0A] hover:bg-[#262626] disabled:opacity-50 text-white font-medium rounded-lg"
                 >
-                  {person.hasAccess ? 'Cambiar contraseña' : 'Crear acceso'}
+                  {person.hasAccess ? 'Guardar cambios' : 'Crear acceso'}
                 </button>
               </div>
+              {person.hasAccess && onRemoveAccess && (
+                <button
+                  type="button"
+                  onClick={quitarAcceso}
+                  disabled={guardandoAcceso}
+                  className="text-[11px] font-medium text-[#B91C1C] hover:underline disabled:opacity-50"
+                >
+                  Quitar el acceso a la aplicación
+                </button>
+              )}
               {mensajeAcceso && (
                 <p className={`flex items-center gap-1.5 text-[11px] font-medium ${mensajeAcceso.tipo === 'ok' ? 'text-[#166534]' : 'text-[#B91C1C]'}`}>
                   {mensajeAcceso.tipo === 'ok' && <CheckCircle2 className="w-3.5 h-3.5" />}

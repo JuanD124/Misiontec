@@ -141,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#E8E8E8] rounded-xl shadow-lg p-2 z-50">
             {filteredPeople.length > 0 && (
               <div className="mb-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8A8A8A] px-2 py-1">Miembros del Rebaño</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8A8A8A] px-2 py-1">Discípulos</p>
                 {filteredPeople.map((person) => (
                   <button
                     key={person.id}
@@ -176,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {filteredGroups.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8A8A8A] px-2 py-1">Grupos de Discipulado</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8A8A8A] px-2 py-1">Grupos de Comunión</p>
                 {filteredGroups.map((grp) => (
                   <div key={grp.id} className="p-2 rounded-lg hover:bg-[#F5F5F5] flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -186,7 +186,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <p className="text-[10px] text-[#6B6B6B]">{grp.zone} • Líder: {grp.leaderName}</p>
                       </div>
                     </div>
-                    <span className="text-xs text-[#EA580C] font-semibold">{grp.memberCount} hermanos</span>
+                    <span className="text-xs text-[#EA580C] font-semibold">{grp.memberCount} discípulos</span>
                   </div>
                 ))}
               </div>
@@ -324,7 +324,7 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <UserPlus className="w-4 h-4 text-[#EA580C]" />
                 <div className="text-left">
-                  <p className="font-semibold">Nuevo Miembro / Hermano</p>
+                  <p className="font-semibold">Nuevo Discípulo</p>
                   <p className="text-[10px] text-[#6B6B6B]">Ingreso al rebaño</p>
                 </div>
               </button>

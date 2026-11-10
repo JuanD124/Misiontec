@@ -8,6 +8,7 @@ import {
   HeartHandshake,
   Calendar,
   FileText,
+  KeyRound,
   ShieldCheck,
   LogOut,
   Cross,
@@ -26,6 +27,7 @@ interface SidebarProps {
   criticalAlertsCount: number;
   peopleCount: number;
   groupsCount: number;
+  accessCount: number;
   abierto: boolean;
   onCerrar: () => void;
   onOpenArchitectureModal: () => void;
@@ -42,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   criticalAlertsCount,
   peopleCount,
   groupsCount,
+  accessCount,
   abierto,
   onCerrar,
   onOpenArchitectureModal,
@@ -50,9 +53,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const todosLosItems = [
     { id: 'dashboard', label: 'Inicio Pastoral', icon: Church, badge: null },
-    { id: 'personas', label: 'Rebaño & Miembros', icon: Users, badge: `${peopleCount} Hermanos` },
-    { id: 'grupos', label: 'Grupos de Discipulado', icon: MapPin, badge: `${groupsCount} Grupos` },
-    { id: 'discipulado', label: 'Formación & Discipulado', icon: BookOpen, badge: '4 Fases' },
+    { id: 'personas', label: 'Discípulos', icon: Users, badge: `${peopleCount} Discípulos` },
+    { id: 'grupos', label: 'Grupos de Comunión', icon: MapPin, badge: `${groupsCount} Grupos` },
+    { id: 'discipulado', label: 'Adiestramiento', icon: BookOpen, badge: '4 Fases' },
     { id: 'asistencia', label: 'Registro de Asistencia', icon: ClipboardCheck, badge: null },
     {
       id: 'alertas',
@@ -63,6 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     { id: 'eventos', label: 'Encuentros & Misiones', icon: Calendar, badge: null },
     { id: 'reportes', label: 'Informes', icon: FileText, badge: null },
+    { id: 'accesos', label: 'Accesos', icon: KeyRound, badge: `${accessCount} Usuarios` },
   ];
 
   const navItems = todosLosItems.filter((item) => {

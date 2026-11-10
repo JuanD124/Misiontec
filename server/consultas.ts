@@ -1,5 +1,5 @@
 import { pool } from './db';
-import { puede } from '../src/data/roles';
+import { puede, rolDesdeBase } from '../src/data/roles';
 import { Sesion } from './sesion';
 import { SEMAFORO, ESTADO_GRUPO } from './mappers';
 import {
@@ -36,6 +36,9 @@ export async function obtenerPersonasConEstado(): Promise<PersonaConEstado[]> {
            d.nombre AS distrito, p.id_grupo, g.nombre AS grupo, p.fase, p.id_mentor,
            CONCAT(m.nombres, ' ', m.apellidos) AS mentor, p.notas_criticas, p.fecha_ingreso,
            (p.contrasena_hash IS NOT NULL) AS tiene_acceso,
+           (SELECT r.nombre FROM persona_rol pr JOIN rol r ON r.id_rol = pr.id_rol
+             WHERE pr.id_persona = p.id_persona AND pr.activo = 1
+             ORDER BY r.nivel_jerarquia LIMIT 1) AS rol_app,
            (SELECT GROUP_CONCAT(e.nombre SEPARATOR '|')
               FROM persona_etiqueta pe JOIN etiqueta e ON e.id_etiqueta = pe.id_etiqueta
              WHERE pe.id_persona = p.id_persona) AS etiquetas
@@ -74,6 +77,7 @@ export async function obtenerPersonasConEstado(): Promise<PersonaConEstado[]> {
 export async function obtenerGruposConIndicadores(personas: PersonaConEstado[]): Promise<GrupoConIndicadores[]> {
   const [grupos]: any = await pool.query(`
     SELECT g.id_grupo, g.codigo, g.nombre, g.direccion, g.barrio, g.latitud, g.longitud, g.dia_reunion,
+           g.id_lider, g.id_asistente,
            TIME_FORMAT(g.hora_reunion, '%H:%i') AS hora, g.estado,
            z.nombre AS zona, d.nombre AS distrito,
            CONCAT(l.nombres, ' ', l.apellidos) AS lider, l.telefono AS telefono_lider,
@@ -131,6 +135,7 @@ export function personasParaPantalla(personas: PersonaConEstado[]) {
     enrollmentDate: r.fecha_ingreso,
     tags: r.etiquetas ? r.etiquetas.split('|') : [],
     hasAccess: Boolean(r.tiene_acceso),
+    accessRole: (r.rol_app ? rolDesdeBase(r.rol_app) : null) ?? undefined,
   }));
 }
 
@@ -140,10 +145,13 @@ export function gruposParaPantalla(grupos: GrupoConIndicadores[]) {
     code: r.codigo,
     name: r.nombre,
     leaderName: r.lider ?? 'Sin líder',
+    leaderId: r.id_lider ? String(r.id_lider) : '',
     leaderPhone: r.telefono_lider ?? '',
     assistantName: r.asistente ?? 'Sin asistente',
+    assistantId: r.id_asistente ? String(r.id_asistente) : '',
     zone: r.zona,
     district: r.distrito,
+    neighborhood: r.barrio ?? '',
     address: r.direccion,
     lat: Number(r.latitud),
     lng: Number(r.longitud),

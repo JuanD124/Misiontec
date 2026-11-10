@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api, ErrorApi, DatosEvento } from './services/api';
+import { api, ErrorApi, DatosEvento, DatosGrupo, DatosAcceso } from './services/api';
 import {
   Person,
   MissionaryGroup,
@@ -8,6 +8,7 @@ import {
   TrafficLightStatus,
   MissionEvent,
   SesionUsuario,
+  UserRole,
 } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -20,6 +21,9 @@ import { QuickAttendance } from './components/QuickAttendance';
 import { PersonFormModal } from './components/modals/PersonFormModal';
 import { PersonDetailModal } from './components/modals/PersonDetailModal';
 import { EventFormModal } from './components/modals/EventFormModal';
+import { GroupFormModal } from './components/modals/GroupFormModal';
+import { AccessFormModal } from './components/modals/AccessFormModal';
+import { AccessView } from './components/views/AccessView';
 import { EventAttendeesModal } from './components/modals/EventAttendeesModal';
 import { SystemArchitectureModal } from './components/modals/SystemArchitectureModal';
 import { ConfirmDialog, DatosConfirmacion } from './components/modals/ConfirmDialog';
@@ -61,6 +65,8 @@ export default function App() {
   const [personForm, setPersonForm] = useState<{ abierto: boolean; persona: Person | null }>({ abierto: false, persona: null });
   const [selectedPersonForDetail, setSelectedPersonForDetail] = useState<Person | null>(null);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
+  const [groupForm, setGroupForm] = useState<{ abierto: boolean; grupo: MissionaryGroup | null }>({ abierto: false, grupo: null });
+  const [accessForm, setAccessForm] = useState<{ abierto: boolean; persona: Person | null }>({ abierto: false, persona: null });
   const [eventForAttendees, setEventForAttendees] = useState<MissionEvent | null>(null);
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState(false);
   const [confirmacion, setConfirmacion] = useState<DatosConfirmacion | null>(null);
@@ -222,7 +228,7 @@ export default function App() {
       } else {
         const created = await api.crearPersona(data);
         await loadData();
-        showToast(`Miembro "${created.fullName}" registrado con el código ${created.code}.`);
+        showToast(`Discípulo "${created.fullName}" registrado con el código ${created.code}.`);
       }
     } catch (err) {
       sesionExpirada(err);
@@ -230,14 +236,97 @@ export default function App() {
     }
   };
 
-  const handleSetAccess = async (personId: string, clave: string) => {
+  const handleSetAccess = async (personId: string, clave: string, rolNuevo: UserRole) => {
     try {
-      await api.definirAcceso(personId, clave);
+      await api.definirAcceso(personId, clave, rolNuevo);
       await loadData();
     } catch (err) {
       sesionExpirada(err);
       throw err;
     }
+  };
+
+  const handleRemoveAccess = async (personId: string) => {
+    try {
+      await api.quitarAcceso(personId);
+      await loadData();
+    } catch (err) {
+      sesionExpirada(err);
+      throw err;
+    }
+  };
+
+  const handleCreateAccess = async (data: DatosAcceso) => {
+    try {
+      await api.crearAcceso(data);
+      await loadData();
+      showToast(`Acceso creado para ${data.fullName} como ${infoRol(data.role).nombre}. Entra con su documento y la contraseña que definiste.`);
+    } catch (err) {
+      sesionExpirada(err);
+      throw err;
+    }
+  };
+
+  const handleUpdateAccess = async (personId: string, clave: string, rolNuevo: UserRole) => {
+    try {
+      await api.definirAcceso(personId, clave, rolNuevo);
+      await loadData();
+      showToast(`El acceso quedó como ${infoRol(rolNuevo).nombre}.`);
+    } catch (err) {
+      sesionExpirada(err);
+      throw err;
+    }
+  };
+
+  const handleConfirmRemoveAccess = (persona: Person) => {
+    setConfirmacion({
+      titulo: `¿Quitar el acceso a ${persona.fullName}?`,
+      mensaje: 'Ya no podrá iniciar sesión. La persona se conserva en el padrón y puedes volver a darle acceso cuando quieras.',
+      textoConfirmar: 'Sí, quitar acceso',
+      accion: async () => {
+        try {
+          await api.quitarAcceso(persona.id);
+          await loadData();
+          showToast(`Se quitó el acceso a ${persona.fullName}.`);
+        } catch (err) {
+          if (!sesionExpirada(err)) showToast(`No se pudo quitar el acceso: ${(err as Error).message}`, 'error');
+        }
+      },
+    });
+  };
+
+  const handleSaveGroup = async (data: DatosGrupo, groupId?: string) => {
+    try {
+      if (groupId) {
+        await api.editarGrupo(groupId, data);
+        await loadData();
+        showToast('El grupo se actualizó.');
+      } else {
+        await api.crearGrupo(data);
+        await loadData();
+        showToast(`El grupo "${data.name}" fue creado con su ubicación.`);
+      }
+    } catch (err) {
+      sesionExpirada(err);
+      throw err;
+    }
+  };
+
+  const handleDeleteGroup = (grupo: MissionaryGroup) => {
+    setConfirmacion({
+      titulo: `¿Eliminar el grupo "${grupo.name}"?`,
+      mensaje: 'El grupo dejará de aparecer en el mapa y en las listas. Solo se puede eliminar si ya no tiene discípulos.',
+      textoConfirmar: 'Sí, eliminar',
+      accion: async () => {
+        try {
+          await api.eliminarGrupo(grupo.id);
+          await loadData();
+          showToast('El grupo fue eliminado.');
+        } catch (err) {
+          if (!sesionExpirada(err)) showToast(`No se pudo eliminar: ${(err as Error).message}`, 'error');
+        }
+      },
+    });
   };
 
   const handlePromotePerson = async (personId: string, nextPhase: DiscipleshipPhase) => {
@@ -351,6 +440,7 @@ export default function App() {
         criticalAlertsCount={criticalCount}
         peopleCount={people.length}
         groupsCount={groups.length}
+        accessCount={people.filter((p) => p.hasAccess).length}
         abierto={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
         onOpenArchitectureModal={() => { setIsArchitectureModalOpen(true); setMenuAbierto(false); }}
@@ -387,7 +477,7 @@ export default function App() {
                     Hola, {sesion.nombre.split(' ')[0]} • MISIONTEC
                   </h1>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">
-                    Consolidado de cobertura territorial, cuidado de hermanos en grupos y seguimiento discipular.
+                    Consolidado de cobertura territorial, cuidado de discípulos en grupos y seguimiento discipular.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -475,6 +565,9 @@ export default function App() {
                 groups={filteredGroups}
                 people={filteredPeople}
                 onTakeAttendanceForGroup={can('tomarAsistencia') ? () => selectView('asistencia') : undefined}
+                onCreateGroup={can('gestionarGrupos') ? () => setGroupForm({ abierto: true, grupo: null }) : undefined}
+                onEditGroup={can('gestionarGrupos') ? (g) => setGroupForm({ abierto: true, grupo: g }) : undefined}
+                onDeleteGroup={can('eliminar') ? handleDeleteGroup : undefined}
               />
             </div>
           )}
@@ -515,6 +608,18 @@ export default function App() {
                 onCreateEvent={can('gestionarEventos') ? () => setIsEventFormOpen(true) : undefined}
                 onManageAttendees={can('tomarAsistencia') ? setEventForAttendees : undefined}
                 onDeleteEvent={can('eliminar') ? handleDeleteEvent : undefined}
+              />
+            </div>
+          )}
+
+          {currentView === 'accesos' && can('gestionarAccesos') && (
+            <div className="max-w-5xl mx-auto animate-in fade-in duration-150">
+              <AccessView
+                people={people}
+                sesionId={sesion.id}
+                onCreate={() => setAccessForm({ abierto: true, persona: null })}
+                onEdit={(p) => setAccessForm({ abierto: true, persona: p })}
+                onRemove={handleConfirmRemoveAccess}
               />
             </div>
           )}
@@ -560,7 +665,27 @@ export default function App() {
         onPromotePhase={can('promoverFase') ? handlePromotePerson : undefined}
         onEdit={can('registrarMiembro') ? (p) => { setSelectedPersonForDetail(null); setPersonForm({ abierto: true, persona: p }); } : undefined}
         onSetAccess={can('gestionarAccesos') ? handleSetAccess : undefined}
+        onRemoveAccess={can('gestionarAccesos') ? handleRemoveAccess : undefined}
         onDelete={can('eliminar') ? handleDeletePerson : undefined}
+      />
+
+      <AccessFormModal
+        isOpen={accessForm.abierto}
+        onClose={() => setAccessForm({ abierto: false, persona: null })}
+        people={people}
+        personToEdit={accessForm.persona}
+        sesionId={sesion.id}
+        onCreate={handleCreateAccess}
+        onUpdate={handleUpdateAccess}
+      />
+
+      <GroupFormModal
+        isOpen={groupForm.abierto}
+        onClose={() => setGroupForm({ abierto: false, grupo: null })}
+        groups={groups}
+        people={people}
+        groupToEdit={groupForm.grupo}
+        onSave={handleSaveGroup}
       />
 
       <EventFormModal

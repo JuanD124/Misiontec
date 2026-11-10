@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  Church, 
-  Users, 
-  Clock, 
-  MapPin, 
-  ExternalLink
+import {
+  Church,
+  Users,
+  Clock,
+  MapPin,
+  ExternalLink,
+  Plus,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { MissionaryGroup, Person } from '../../types';
 import { InteractiveMap } from '../InteractiveMap';
@@ -13,12 +16,18 @@ interface GroupsViewProps {
   groups: MissionaryGroup[];
   people: Person[];
   onTakeAttendanceForGroup?: (groupId: string) => void;
+  onCreateGroup?: () => void;
+  onEditGroup?: (group: MissionaryGroup) => void;
+  onDeleteGroup?: (group: MissionaryGroup) => void;
 }
 
 export const GroupsView: React.FC<GroupsViewProps> = ({
   groups,
   people,
-  onTakeAttendanceForGroup
+  onTakeAttendanceForGroup,
+  onCreateGroup,
+  onEditGroup,
+  onDeleteGroup
 }) => {
   const [selectedGroup, setSelectedGroup] = useState<MissionaryGroup | null>(groups[0] || null);
 
@@ -28,19 +37,40 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
         <div>
           <h1 className="text-lg font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
             <Church className="w-5 h-5 text-[#EA580C]" />
-            Grupos de Discipulado & Red Territorial
+            Grupos de Comunión & Red Territorial
           </h1>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
-            Monitoreo territorial de grupos de discipulado, perseverancia y presencia pastoral por zonas.
+            Monitoreo territorial de grupos de comunión, perseverancia y presencia pastoral por zonas.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs bg-[#FAFAFA] text-[#16A34A] border border-[#BBF7D0] font-medium px-3 py-1 rounded-full">
-            {groups.length} Grupos Activos
+            {groups.length} {groups.length === 1 ? 'Grupo Activo' : 'Grupos Activos'}
           </span>
+          {onCreateGroup && (
+            <button
+              onClick={onCreateGroup}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-medium rounded-lg shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Nuevo grupo</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {groups.length === 0 && (
+        <div className="p-8 text-center bg-white rounded-xl border border-dashed border-[#E0E0E0]">
+          <Church className="w-8 h-8 text-[#EA580C] mx-auto mb-2" />
+          <p className="text-sm font-semibold text-[#0A0A0A]">Todavía no hay grupos de comunión</p>
+          <p className="text-xs text-[#6B6B6B] mt-1">
+            {onCreateGroup
+              ? 'Crea el primero con el botón "Nuevo grupo" y marca su ubicación en el mapa.'
+              : 'El Pastor es quien crea los grupos y registra su ubicación.'}
+          </p>
+        </div>
+      )}
 
       <InteractiveMap
         groups={groups}
@@ -97,7 +127,7 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
 
               <div className="grid grid-cols-2 gap-2 p-2 bg-[#FAFAFA] border border-[#E8E8E8] rounded-lg text-center text-xs mb-3">
                 <div>
-                  <span className="text-[10px] text-[#6B6B6B]">Hermanos</span>
+                  <span className="text-[10px] text-[#6B6B6B]">Discípulos</span>
                   <p className="font-serif font-bold text-[#0A0A0A]">{grp.memberCount}</p>
                 </div>
                 <div>
@@ -116,6 +146,30 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
                   <span>Registrar Asistencia en este Grupo</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
+              )}
+
+              {(onEditGroup || onDeleteGroup) && (
+                <div className="mt-2 flex items-center gap-2">
+                  {onEditGroup && (
+                    <button
+                      onClick={() => onEditGroup(grp)}
+                      className="flex-1 py-1.5 flex items-center justify-center gap-1.5 text-xs font-medium text-[#EA580C] bg-[#FAFAFA] hover:bg-[#F2F2F2] border border-[#E0E0E0] rounded-lg"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Editar grupo y ubicación
+                    </button>
+                  )}
+                  {onDeleteGroup && (
+                    <button
+                      onClick={() => onDeleteGroup(grp)}
+                      className="p-2 text-[#B91C1C] hover:bg-[#FEF2F2] border border-[#FECACA] rounded-lg"
+                      title="Eliminar grupo"
+                      aria-label="Eliminar grupo"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           );

@@ -112,7 +112,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   Patrón Arquitectónico: Plataforma Integral de Acompañamiento
                 </h3>
                 <p className="text-[#404040] leading-relaxed">
-                  MISIONTEC implementa una estructura desacoplada que armoniza el registro fraterno, la georreferenciación de grupos de discipulado de Villavicencio, el cálculo preventivo del semáforo de deserción y el seguimiento pastoral personalizado.
+                  MISIONTEC implementa una estructura desacoplada que armoniza el registro fraterno, la georreferenciación de grupos de comunión de Villavicencio, el cálculo preventivo del semáforo de deserción y el seguimiento pastoral personalizado.
                 </p>
               </div>
 
@@ -137,9 +137,9 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   </div>
                   <ul className="space-y-1 text-[#6B6B6B] text-[11px]">
                     <li>• Semáforo de acompañamiento espiritual</li>
-                    <li>• Embudo de 4 etapas de discipulado</li>
+                    <li>• Embudo de 4 etapas de formación</li>
                     <li>• Toma rápida de asistencia de grupo</li>
-                    <li>• Historial de fases de discipulado</li>
+                    <li>• Historial de fases de formación</li>
                   </ul>
                 </div>
 
@@ -149,7 +149,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                     <span>Capa de Datos & Territorio</span>
                   </div>
                   <ul className="space-y-1 text-[#6B6B6B] text-[11px]">
-                    <li>• Padrón unificado de miembros</li>
+                    <li>• Padrón unificado de discípulos</li>
                     <li>• Coordenadas de los grupos en Villavicencio</li>
                     <li>• Historial de cambios de fase</li>
                     <li>• Organización de grupos por zonas</li>
@@ -166,7 +166,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                   Cálculo Preventivo del Semáforo de Deserción Pastoral
                 </h3>
                 <p className="text-[#404040] leading-relaxed mb-3">
-                  Para que ningún hermano nuevo o miembro sea descuidado, el sistema calcula en tiempo real las inasistencias consecutivas al grupo:
+                  Para que ningún discípulo nuevo o miembro sea descuidado, el sistema calcula en tiempo real las inasistencias consecutivas al grupo:
                 </p>
 
                 <div className="p-3 bg-white rounded-lg border border-[#E0E0E0] font-mono text-xs text-[#EA580C]">
@@ -253,13 +253,13 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                 <div className="p-3.5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8]">
                   <h4 className="font-serif font-bold text-[#0A0A0A]">HERMANO / PERSONA</h4>
                   <p className="text-[11px] text-[#6B6B6B] mt-1">
-                    id, código, documento, nombres, teléfono, fase de discipulado, estado pastoral, grupo asignado, mentor, inasistencias consecutivas.
+                    id, código, documento, nombres, teléfono, fase de formación, estado pastoral, grupo asignado, mentor, inasistencias consecutivas.
                   </p>
                 </div>
                 <div className="p-3.5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8]">
                   <h4 className="font-serif font-bold text-[#0A0A0A]">GRUPO DE DISCIPULADO</h4>
                   <p className="text-[11px] text-[#6B6B6B] mt-1">
-                    id, nombre del grupo, pastor/líder, zona, distrito, latitud, longitud, día y hora de comunión, total de hermanos.
+                    id, nombre del grupo, pastor/líder, zona, distrito, latitud, longitud, día y hora de comunión, total de discípulos.
                   </p>
                 </div>
                 <div className="p-3.5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8]">
