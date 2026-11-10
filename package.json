@@ -9,6 +9,7 @@
     "dev:api": "tsx watch server/index.ts",
     "db:cargar": "tsx server/cargar_base.ts",
     "db:accesos": "tsx server/crear_accesos.ts",
+    "db:ejemplo": "tsx server/cargar_ejemplo.ts",
     "build": "vite build",
     "start": "tsx server/index.ts",
     "preview": "vite preview",
