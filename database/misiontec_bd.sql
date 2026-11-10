@@ -60,6 +60,7 @@ CREATE TABLE persona (
   notas_criticas      TEXT NULL,
   autoriza_datos      TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Autorización Ley 1581 de 2012',
   fecha_autorizacion  DATETIME NULL,
+  contrasena_hash     VARCHAR(255) NULL COMMENT 'Acceso a la aplicación; guarda solo el hash, nunca la contraseña',
   activo              TINYINT(1) NOT NULL DEFAULT 1,
   fecha_creacion      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -211,21 +212,25 @@ INSERT INTO zona (id_distrito, nombre) VALUES
  (2, 'Zona Oriente - La Esperanza');
 
 INSERT INTO rol (nombre, descripcion, nivel_jerarquia) VALUES
- ('Pastor',             'Dirige la misión y aprueba el avance de los discípulos de una fase a otra',          1),
- ('Asistente pastoral', 'Ayuda al pastor con el registro de miembros, la asistencia y los informes',           2),
- ('Discipulador',       'Da la clase a su grupo, toma la asistencia y cuida a sus discípulos',                 3),
- ('Discípulo',          'Recibe la clase y participa en su grupo de discipulado',                              4);
+ ('Pastor',             'Dirige la misión. Tiene todas las funciones y es el único que puede eliminar', 1),
+ ('Asistente pastoral', 'Ayuda al pastor: hace los registros, crea encuentros y misiones y ve los informes', 2),
+ ('Discipulador',       'Acompaña a su grupo: formación, asistencia, cuidado pastoral y encuentros',    3);
 
 INSERT INTO permiso (codigo, descripcion, modulo) VALUES
- ('MIEMBROS_VER',      'Ver la lista de miembros y sus fichas',          'Miembros'),
- ('MIEMBRO_REGISTRAR', 'Registrar nuevos miembros',                      'Miembros'),
- ('GRUPOS_VER',        'Ver los grupos de discipulado y el mapa',        'Grupos'),
- ('DISCIPULADO_VER',   'Ver las fases de discipulado',                   'Discipulado'),
- ('FASE_PROMOVER',     'Promover a un miembro a la siguiente fase',      'Discipulado'),
- ('ASISTENCIA_TOMAR',  'Tomar la asistencia de los grupos',              'Asistencia'),
- ('CUIDADO_VER',       'Ver el semáforo y las alertas de cuidado',       'Cuidado'),
- ('EVENTOS_VER',       'Ver los eventos',                                'Eventos'),
- ('REPORTES_VER',      'Ver los informes',                               'Reportes');
+ ('INICIO_VER', 'Ver el inicio con los indicadores generales', 'Inicio'),
+ ('PADRON_VER', 'Ver el padrón completo de miembros y los grupos', 'Miembros'),
+ ('MIEMBROS_VER', 'Ver las fichas de los miembros de su alcance', 'Miembros'),
+ ('MIEMBRO_REGISTRAR', 'Registrar y editar miembros', 'Miembros'),
+ ('GRUPOS_VER', 'Ver los grupos de discipulado y el mapa', 'Grupos'),
+ ('DISCIPULADO_VER', 'Ver la formación y las fases de discipulado', 'Discipulado'),
+ ('FASE_PROMOVER', 'Promover a un miembro a la siguiente fase', 'Discipulado'),
+ ('ASISTENCIA_TOMAR', 'Registrar la asistencia de los grupos y de los encuentros', 'Asistencia'),
+ ('CUIDADO_VER', 'Ver el semáforo y las alertas de cuidado pastoral', 'Cuidado'),
+ ('EVENTOS_VER', 'Ver los encuentros y misiones', 'Eventos'),
+ ('EVENTO_CREAR', 'Crear encuentros y misiones', 'Eventos'),
+ ('REPORTES_VER', 'Ver los informes', 'Reportes'),
+ ('ACCESO_GESTIONAR', 'Crear y cambiar los accesos (contraseñas) del equipo', 'Accesos'),
+ ('ELIMINAR', 'Eliminar personas y encuentros', 'Eliminación');
 
 INSERT INTO persona (codigo, tipo_documento, numero_documento, nombres, apellidos, fecha_nacimiento, genero,
                      telefono, correo, direccion, barrio, fase, fecha_ingreso, autoriza_datos, fecha_autorizacion) VALUES
@@ -274,9 +279,7 @@ INSERT INTO persona_rol (id_persona, id_rol, fecha_inicio) VALUES
  (1, 1, '2015-02-01'),
  (2, 2, '2017-05-12'),
  (3, 3, '2019-02-07'), (4, 3, '2020-05-13'), (5, 3, '2021-03-05'), (6, 3, '2022-08-06'),
- (7, 3, '2023-01-15'), (8, 3, '2023-06-01'), (9, 3, '2023-08-01'), (10, 3, '2023-09-01'),
- (11, 4, '2025-09-14'), (12, 4, '2024-11-03'), (13, 4, '2026-06-02'), (14, 4, '2025-12-01'),
- (15, 4, '2026-08-10'), (16, 4, '2025-04-15'), (17, 4, '2024-03-30'), (18, 4, '2026-09-06');
+ (7, 3, '2023-01-15'), (8, 3, '2023-06-01'), (9, 3, '2023-08-01'), (10, 3, '2023-09-01');
 
 INSERT INTO etiqueta (nombre) VALUES ('Nuevo creyente'), ('Joven'), ('Músico'), ('Necesita visita'), ('Servidor');
 INSERT INTO persona_etiqueta VALUES (13,1),(15,1),(15,2),(18,1),(18,2),(8,3),(13,4),(12,5),(17,5);

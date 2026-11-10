@@ -224,7 +224,7 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                             {person.fullName}
                           </button>
                           <span className="text-[10px] text-[#6B6B6B]">
-                            {person.code} • DNI: {person.dni}
+                            {person.code} • Doc.: {person.dni}
                           </span>
                         </div>
                       </div>

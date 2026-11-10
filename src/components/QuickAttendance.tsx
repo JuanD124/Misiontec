@@ -186,7 +186,7 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
                         </div>
                         <div>
                           <p className="font-medium text-[#0A0A0A]">{member.fullName}</p>
-                          <p className="text-[10px] text-[#6B6B6B]">DNI: {member.dni}</p>
+                          <p className="text-[10px] text-[#6B6B6B]">Doc.: {member.dni}</p>
                         </div>
                       </div>
                     </td>

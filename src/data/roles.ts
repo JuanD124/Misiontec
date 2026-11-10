@@ -1,6 +1,8 @@
 import { UserRole } from '../types';
 
 export type Funcion =
+  | 'verInicio'
+  | 'verPadron'
   | 'verMiembros'
   | 'registrarMiembro'
   | 'verGrupos'
@@ -9,23 +11,32 @@ export type Funcion =
   | 'tomarAsistencia'
   | 'verCuidado'
   | 'verEventos'
-  | 'verReportes';
+  | 'gestionarEventos'
+  | 'verReportes'
+  | 'gestionarAccesos'
+  | 'eliminar';
 
 export const FUNCIONES: Record<Funcion, string> = {
-  verMiembros: 'Ver la lista de miembros y sus fichas',
-  registrarMiembro: 'Registrar nuevos miembros',
+  verInicio: 'Ver el inicio con los indicadores generales',
+  verPadron: 'Ver el padrón completo de miembros y los grupos',
+  verMiembros: 'Ver las fichas de los miembros de su alcance',
+  registrarMiembro: 'Registrar y editar miembros',
   verGrupos: 'Ver los grupos de discipulado y el mapa',
-  verDiscipulado: 'Ver las fases de discipulado',
+  verDiscipulado: 'Ver la formación y las fases de discipulado',
   promoverFase: 'Promover a un miembro a la siguiente fase',
-  tomarAsistencia: 'Tomar la asistencia de los grupos',
-  verCuidado: 'Ver el semáforo y las alertas de cuidado',
-  verEventos: 'Ver los eventos',
+  tomarAsistencia: 'Registrar la asistencia de los grupos y de los encuentros',
+  verCuidado: 'Ver el semáforo y las alertas de cuidado pastoral',
+  verEventos: 'Ver los encuentros y misiones',
+  gestionarEventos: 'Crear encuentros y misiones',
   verReportes: 'Ver los informes',
+  gestionarAccesos: 'Crear y cambiar los accesos (contraseñas) del equipo',
+  eliminar: 'Eliminar personas y encuentros',
 };
 
 export interface InfoRol {
   clave: UserRole;
   nombre: string;
+  nombreEnBase: string;
   nivel: number;
   descripcion: string;
   funciones: Funcion[];
@@ -35,42 +46,38 @@ export const ROLES: InfoRol[] = [
   {
     clave: 'pastor',
     nombre: 'Pastor',
+    nombreEnBase: 'Pastor',
     nivel: 1,
-    descripcion: 'Dirige la misión y aprueba el avance de los discípulos de una fase a otra.',
+    descripcion: 'Dirige la misión. Tiene todas las funciones y es el único que puede eliminar.',
     funciones: [
-      'verMiembros', 'registrarMiembro', 'verGrupos', 'verDiscipulado', 'promoverFase',
-      'tomarAsistencia', 'verCuidado', 'verEventos', 'verReportes',
+      'verInicio', 'verPadron', 'verMiembros', 'registrarMiembro', 'verGrupos', 'verDiscipulado', 'promoverFase',
+      'tomarAsistencia', 'verCuidado', 'verEventos', 'gestionarEventos', 'verReportes', 'gestionarAccesos', 'eliminar',
     ],
   },
   {
     clave: 'asistente',
     nombre: 'Asistente Pastoral',
+    nombreEnBase: 'Asistente pastoral',
     nivel: 2,
-    descripcion: 'Ayuda al pastor con el registro de miembros, la asistencia y los informes de seguimiento.',
+    descripcion: 'Ayuda al pastor: hace los registros, crea encuentros y misiones y ve los informes. No puede eliminar.',
     funciones: [
-      'verMiembros', 'registrarMiembro', 'verGrupos', 'verDiscipulado',
-      'tomarAsistencia', 'verCuidado', 'verEventos', 'verReportes',
+      'verInicio', 'verPadron', 'verMiembros', 'registrarMiembro', 'verGrupos', 'verDiscipulado',
+      'tomarAsistencia', 'verCuidado', 'verEventos', 'gestionarEventos', 'verReportes',
     ],
   },
   {
     clave: 'discipulador',
     nombre: 'Discipulador',
+    nombreEnBase: 'Discipulador',
     nivel: 3,
-    descripcion: 'Da la clase a su grupo, toma la asistencia y cuida a sus discípulos.',
-    funciones: ['verMiembros', 'verGrupos', 'verDiscipulado', 'tomarAsistencia', 'verCuidado', 'verEventos'],
-  },
-  {
-    clave: 'discipulo',
-    nombre: 'Discípulo',
-    nivel: 4,
-    descripcion: 'Recibe la clase. Consulta su grupo de discipulado y los eventos.',
-    funciones: ['verGrupos', 'verEventos'],
+    descripcion: 'Acompaña a su grupo: ve la formación y el discipulado, registra la asistencia, el cuidado pastoral y los encuentros.',
+    funciones: ['verMiembros', 'verDiscipulado', 'tomarAsistencia', 'verCuidado', 'verEventos'],
   },
 ];
 
-export const VISTAS: Record<string, Funcion | null> = {
-  dashboard: null,
-  personas: 'verMiembros',
+export const VISTAS: Record<string, Funcion> = {
+  dashboard: 'verInicio',
+  personas: 'verPadron',
   grupos: 'verGrupos',
   discipulado: 'verDiscipulado',
   asistencia: 'tomarAsistencia',
@@ -79,11 +86,17 @@ export const VISTAS: Record<string, Funcion | null> = {
   reportes: 'verReportes',
 };
 
-export const infoRol = (rol: UserRole): InfoRol => ROLES.find((r) => r.clave === rol) ?? ROLES[0];
+export const infoRol = (rol: UserRole): InfoRol => ROLES.find((r) => r.clave === rol) ?? ROLES[ROLES.length - 1];
+
+export const rolDesdeBase = (nombreEnBase: string): UserRole | null =>
+  ROLES.find((r) => r.nombreEnBase === nombreEnBase)?.clave ?? null;
 
 export const puede = (rol: UserRole, funcion: Funcion): boolean => infoRol(rol).funciones.includes(funcion);
 
 export const vistaPermitida = (rol: UserRole, vista: string): boolean => {
   const requerida = VISTAS[vista];
-  return !requerida || puede(rol, requerida);
+  return Boolean(requerida) && puede(rol, requerida);
 };
+
+export const primeraVista = (rol: UserRole): string =>
+  Object.keys(VISTAS).find((vista) => vistaPermitida(rol, vista)) ?? 'discipulado';

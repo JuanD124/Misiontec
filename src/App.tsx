@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { api } from './services/api';
-import { 
-  Person, 
-  MissionaryGroup, 
-  NotificationItem, 
-  UserRole, 
-  DiscipleshipPhase, 
+import { api, ErrorApi, DatosEvento } from './services/api';
+import {
+  Person,
+  MissionaryGroup,
+  NotificationItem,
+  DiscipleshipPhase,
   TrafficLightStatus,
-  MissionEvent
+  MissionEvent,
+  SesionUsuario,
 } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { LoginScreen } from './components/LoginScreen';
 import { StatsCards } from './components/StatsCards';
 import { TrafficLightTable } from './components/TrafficLightTable';
 import { InteractiveMap } from './components/InteractiveMap';
 import { DiscipleshipFunnel } from './components/DiscipleshipFunnel';
 import { QuickAttendance } from './components/QuickAttendance';
-import { NewPersonModal } from './components/modals/NewPersonModal';
+import { PersonFormModal } from './components/modals/PersonFormModal';
 import { PersonDetailModal } from './components/modals/PersonDetailModal';
+import { EventFormModal } from './components/modals/EventFormModal';
+import { EventAttendeesModal } from './components/modals/EventAttendeesModal';
 import { SystemArchitectureModal } from './components/modals/SystemArchitectureModal';
-import { puede, infoRol, vistaPermitida, Funcion } from './data/roles';
+import { ConfirmDialog, DatosConfirmacion } from './components/modals/ConfirmDialog';
+import { puede, infoRol, vistaPermitida, primeraVista, Funcion } from './data/roles';
 import { PeopleView } from './components/views/PeopleView';
 import { GroupsView } from './components/views/GroupsView';
 import { DiscipleshipView } from './components/views/DiscipleshipView';
@@ -29,25 +33,56 @@ import { EventsView } from './components/views/EventsView';
 import { ReportsView } from './components/views/ReportsView';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
+const vistaInicial = (sesion: SesionUsuario) => {
+  if (window.location.hash === '#informe-general' && vistaPermitida(sesion.rol, 'reportes')) return 'reportes';
+  return primeraVista(sesion.rol);
+};
+
 export default function App() {
+  const [sesion, setSesion] = useState<SesionUsuario | null>(null);
+  const [comprobando, setComprobando] = useState(true);
+  const [errorInicial, setErrorInicial] = useState<string | null>(null);
+
   const [people, setPeople] = useState<Person[]>([]);
   const [groups, setGroups] = useState<MissionaryGroup[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [events, setEvents] = useState<MissionEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [currentView, setCurrentView] = useState<string>(() => (window.location.hash === '#informe-general' ? 'reportes' : 'dashboard'));
-  const [activeRole, setActiveRole] = useState<UserRole>('pastor');
+  const [currentView, setCurrentView] = useState<string>('dashboard');
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [globalSearch, setGlobalSearch] = useState<string>('');
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [dashboardStatusFilter, setDashboardStatusFilter] = useState<'all' | TrafficLightStatus>('all');
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
-  const [isNewPersonModalOpen, setIsNewPersonModalOpen] = useState(false);
+  const [personForm, setPersonForm] = useState<{ abierto: boolean; persona: Person | null }>({ abierto: false, persona: null });
   const [selectedPersonForDetail, setSelectedPersonForDetail] = useState<Person | null>(null);
+  const [isEventFormOpen, setIsEventFormOpen] = useState(false);
+  const [eventForAttendees, setEventForAttendees] = useState<MissionEvent | null>(null);
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState(false);
+  const [confirmacion, setConfirmacion] = useState<DatosConfirmacion | null>(null);
+
+  const comprobarSesion = () => {
+    setComprobando(true);
+    setErrorInicial(null);
+    api.yo()
+      .then((s) => {
+        setSesion(s);
+        setCurrentView(vistaInicial(s));
+      })
+      .catch((err) => {
+        if (err instanceof ErrorApi && err.estado === 401) setSesion(null);
+        else setErrorInicial('No se pudo conectar con el servidor. Intenta de nuevo en unos segundos.');
+      })
+      .finally(() => setComprobando(false));
+  };
+
+  useEffect(() => {
+    comprobarSesion();
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -58,9 +93,23 @@ export default function App() {
     }
   }, [darkMode]);
 
+  useEffect(() => {
+    if (!selectedPersonForDetail) return;
+    const actualizada = people.find((p) => p.id === selectedPersonForDetail.id);
+    if (actualizada && actualizada !== selectedPersonForDetail) setSelectedPersonForDetail(actualizada);
+  }, [people]);
+
   const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const sesionExpirada = (err: unknown) => {
+    if (err instanceof ErrorApi && err.estado === 401) {
+      setSesion(null);
+      return true;
+    }
+    return false;
   };
 
   const loadData = async () => {
@@ -72,28 +121,75 @@ export default function App() {
       setEvents(data.events);
       setLoadError(null);
     } catch (err) {
-      setLoadError((err as Error).message);
+      if (!sesionExpirada(err)) setLoadError((err as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (sesion) {
+      setLoading(true);
+      loadData();
+    }
+  }, [sesion?.id]);
+
+  const entrar = (s: SesionUsuario) => {
+    setSesion(s);
+    setCurrentView(vistaInicial(s));
+    setMenuAbierto(false);
+  };
+
+  const salir = async () => {
+    await api.logout().catch(() => undefined);
+    setSesion(null);
+    setPeople([]);
+    setGroups([]);
+    setNotifications([]);
+    setEvents([]);
+    setSelectedPersonForDetail(null);
+    setPersonForm({ abierto: false, persona: null });
+    setMenuAbierto(false);
+    setSelectedDistrict('all');
+    setGlobalSearch('');
+  };
+
+  const selectView = (vista: string) => {
+    setCurrentView(vista);
+    setMenuAbierto(false);
+  };
+
+  if (comprobando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white text-[#404040] text-sm">
+        Cargando MISIONTEC…
+      </div>
+    );
+  }
+
+  if (errorInicial) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white p-6">
+        <div className="max-w-sm w-full border border-[#E8E8E8] rounded-xl p-6 text-sm text-[#0A0A0A] space-y-3 text-center">
+          <h2 className="font-bold text-base">Sin conexión con el servidor</h2>
+          <p className="text-[#6B6B6B]">{errorInicial}</p>
+          <button onClick={comprobarSesion} className="px-4 py-2 bg-[#EA580C] hover:bg-[#C2410C] text-white rounded-lg text-xs font-medium">Reintentar</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sesion) {
+    return <LoginScreen onLogin={entrar} />;
+  }
+
+  const rol = sesion.rol;
+  const can = (funcion: Funcion) => puede(rol, funcion);
 
   const districts = Array.from(new Set(groups.map(g => g.district))).sort();
 
-  const can = (funcion: Funcion) => puede(activeRole, funcion);
-
-  const handleRoleChange = (newRole: UserRole) => {
-    setActiveRole(newRole);
-    if (!vistaPermitida(newRole, currentView)) setCurrentView('dashboard');
-    showToast(`Ahora ves la aplicación como: ${infoRol(newRole).nombre}.`, 'info');
-  };
-
-  const filteredPeople = selectedDistrict === 'all' 
-    ? people 
+  const filteredPeople = selectedDistrict === 'all'
+    ? people
     : people.filter(p => {
         const group = groups.find(g => g.id === p.groupId);
         return group?.district === selectedDistrict || p.district.includes(selectedDistrict);
@@ -104,8 +200,8 @@ export default function App() {
     : groups.filter(g => g.district === selectedDistrict);
 
   const handleSaveAttendance = async (
-    groupId: string, 
-    date: string, 
+    groupId: string,
+    date: string,
     attendanceMap: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>
   ) => {
     try {
@@ -113,17 +209,34 @@ export default function App() {
       await loadData();
       showToast('Asistencia guardada y semáforo de riesgo recalculado automáticamente.');
     } catch (err) {
-      showToast(`No se pudo guardar la asistencia: ${(err as Error).message}`, 'error');
+      if (!sesionExpirada(err)) showToast(`No se pudo guardar la asistencia: ${(err as Error).message}`, 'error');
     }
   };
 
-  const handleAddPerson = async (newPersonData: Omit<Person, 'id' | 'code' | 'status' | 'consecutiveAbsences'>) => {
+  const handleSavePerson = async (data: Partial<Person>, personId?: string) => {
     try {
-      const created = await api.crearPersona(newPersonData);
-      await loadData();
-      showToast(`Miembro "${created.fullName}" registrado exitosamente con código ${created.code}.`);
+      if (personId) {
+        await api.editarPersona(personId, data);
+        await loadData();
+        showToast('Los datos de la persona se actualizaron.');
+      } else {
+        const created = await api.crearPersona(data);
+        await loadData();
+        showToast(`Miembro "${created.fullName}" registrado con el código ${created.code}.`);
+      }
     } catch (err) {
-      showToast(`No se pudo registrar la persona: ${(err as Error).message}`, 'error');
+      sesionExpirada(err);
+      throw err;
+    }
+  };
+
+  const handleSetAccess = async (personId: string, clave: string) => {
+    try {
+      await api.definirAcceso(personId, clave);
+      await loadData();
+    } catch (err) {
+      sesionExpirada(err);
+      throw err;
     }
   };
 
@@ -134,8 +247,65 @@ export default function App() {
       await loadData();
       showToast(`¡${targetPerson?.fullName || 'Miembro'} fue promovido a la fase: ${nextPhase.toUpperCase()}!`, 'success');
     } catch (err) {
-      showToast(`No se pudo cambiar la fase: ${(err as Error).message}`, 'error');
+      if (!sesionExpirada(err)) showToast(`No se pudo cambiar la fase: ${(err as Error).message}`, 'error');
     }
+  };
+
+  const handleCreateEvent = async (data: DatosEvento) => {
+    try {
+      await api.crearEvento(data);
+      await loadData();
+      showToast('El evento se creó correctamente.');
+    } catch (err) {
+      sesionExpirada(err);
+      throw err;
+    }
+  };
+
+  const handleSaveAttendees = async (eventId: string, personIds: number[]) => {
+    try {
+      await api.guardarAsistentesEvento(eventId, personIds);
+      await loadData();
+      showToast('Asistentes del evento guardados.');
+    } catch (err) {
+      sesionExpirada(err);
+      throw err;
+    }
+  };
+
+  const handleDeletePerson = (person: Person) => {
+    setConfirmacion({
+      titulo: `¿Eliminar a ${person.fullName}?`,
+      mensaje: 'Se quitará del padrón, de los grupos y de las alertas. Se conserva su historial en la base de datos.',
+      textoConfirmar: 'Sí, eliminar',
+      accion: async () => {
+        try {
+          await api.desactivarPersona(person.id);
+          setSelectedPersonForDetail(null);
+          await loadData();
+          showToast(`${person.fullName} fue eliminado del padrón.`);
+        } catch (err) {
+          if (!sesionExpirada(err)) showToast(`No se pudo eliminar: ${(err as Error).message}`, 'error');
+        }
+      },
+    });
+  };
+
+  const handleDeleteEvent = (evento: MissionEvent) => {
+    setConfirmacion({
+      titulo: `¿Eliminar "${evento.title}"?`,
+      mensaje: 'El encuentro dejará de aparecer en la lista de eventos.',
+      textoConfirmar: 'Sí, eliminar',
+      accion: async () => {
+        try {
+          await api.eliminarEvento(evento.id);
+          await loadData();
+          showToast('El encuentro fue eliminado.');
+        } catch (err) {
+          if (!sesionExpirada(err)) showToast(`No se pudo eliminar: ${(err as Error).message}`, 'error');
+        }
+      },
+    });
   };
 
   const handleMarkNotificationAsRead = (id: string) => {
@@ -146,9 +316,11 @@ export default function App() {
     setSelectedPersonForDetail(person);
   };
 
+  const abrirNuevaPersona = () => setPersonForm({ abierto: true, persona: null });
+
   const criticalCount = people.filter(p => p.status === 'red').length;
 
-  if (loading) {
+  if (loading && people.length === 0 && groups.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white text-[#404040] text-sm">
         Cargando información de MISIONTEC…
@@ -173,13 +345,15 @@ export default function App() {
     <div id="app-root" className="flex h-screen w-full bg-white text-[#0A0A0A] font-sans antialiased overflow-hidden">
       <Sidebar
         currentView={currentView}
-        onSelectView={(view) => setCurrentView(view)}
-        activeRole={activeRole}
-        onRoleChange={handleRoleChange}
+        onSelectView={selectView}
+        usuario={sesion}
+        onLogout={salir}
         criticalAlertsCount={criticalCount}
         peopleCount={people.length}
         groupsCount={groups.length}
-        onOpenArchitectureModal={() => setIsArchitectureModalOpen(true)}
+        abierto={menuAbierto}
+        onCerrar={() => setMenuAbierto(false)}
+        onOpenArchitectureModal={() => { setIsArchitectureModalOpen(true); setMenuAbierto(false); }}
       />
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
@@ -196,20 +370,21 @@ export default function App() {
           allGroups={groups}
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
-          onOpenNewPersonModal={() => setIsNewPersonModalOpen(true)}
+          onOpenMenu={() => setMenuAbierto(true)}
+          onOpenNewPersonModal={abrirNuevaPersona}
           puedeRegistrar={can('registrarMiembro')}
           selectedDistrict={selectedDistrict}
           districts={districts}
           onDistrictChange={setSelectedDistrict}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 space-y-6 custom-scrollbar">
           {currentView === 'dashboard' && (
             <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-150">
-              <div className="p-4.5 bg-white border border-[#E8E8E8] rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 sm:p-4.5 bg-white border border-[#E8E8E8] rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h1 className="text-lg font-serif font-bold text-[#0A0A0A] tracking-tight">
-                    MISIONTEC • Sistema Pastoral de Acompañamiento y Misión
+                    Hola, {sesion.nombre.split(' ')[0]} • MISIONTEC
                   </h1>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">
                     Consolidado de cobertura territorial, cuidado de hermanos en grupos y seguimiento discipular.
@@ -253,8 +428,7 @@ export default function App() {
                 <div>
                   <InteractiveMap
                     groups={filteredGroups}
-                    onSelectGroup={(grp) => console.log('Selected group:', grp.name)}
-                    onQuickAttendanceForGroup={can('tomarAsistencia') ? (groupId) => {
+                    onQuickAttendanceForGroup={can('tomarAsistencia') ? () => {
                       const el = document.getElementById('dashboard-attendance-section');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     } : undefined}
@@ -289,7 +463,7 @@ export default function App() {
               <PeopleView
                 people={filteredPeople}
                 groups={filteredGroups}
-                onOpenNewPersonModal={can('registrarMiembro') ? () => setIsNewPersonModalOpen(true) : undefined}
+                onOpenNewPersonModal={can('registrarMiembro') ? abrirNuevaPersona : undefined}
                 onOpenPersonDetail={handleOpenPersonDetail}
               />
             </div>
@@ -300,7 +474,7 @@ export default function App() {
               <GroupsView
                 groups={filteredGroups}
                 people={filteredPeople}
-                onTakeAttendanceForGroup={can('tomarAsistencia') ? () => setCurrentView('asistencia') : undefined}
+                onTakeAttendanceForGroup={can('tomarAsistencia') ? () => selectView('asistencia') : undefined}
               />
             </div>
           )}
@@ -336,14 +510,19 @@ export default function App() {
 
           {currentView === 'eventos' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
-              <EventsView events={events} />
+              <EventsView
+                events={events}
+                onCreateEvent={can('gestionarEventos') ? () => setIsEventFormOpen(true) : undefined}
+                onManageAttendees={can('tomarAsistencia') ? setEventForAttendees : undefined}
+                onDeleteEvent={can('eliminar') ? handleDeleteEvent : undefined}
+              />
             </div>
           )}
 
           {currentView === 'reportes' && (
             <div className="max-w-7xl mx-auto animate-in fade-in duration-150">
               <ReportsView
-                rolActivo={infoRol(activeRole).nombre}
+                rolActivo={infoRol(rol).nombre}
                 people={filteredPeople}
                 groups={filteredGroups}
               />
@@ -353,12 +532,12 @@ export default function App() {
       </div>
 
       {toastMessage && (
-        <div className="no-print fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#0A0A0A] text-[#FAFAFA] shadow-xl border border-[#C2410C] text-xs font-medium animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="no-print fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-[60] flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#0A0A0A] text-[#FAFAFA] shadow-xl border border-[#C2410C] text-xs font-medium animate-in fade-in slide-in-from-bottom-3 duration-200">
           {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-[#4ADE80] shrink-0" />}
           {toastMessage.type === 'info' && <Info className="w-4 h-4 text-[#FDBA74] shrink-0" />}
           {toastMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-[#F87171] shrink-0" />}
-          <span>{toastMessage.text}</span>
-          <button 
+          <span className="flex-1">{toastMessage.text}</span>
+          <button
             onClick={() => setToastMessage(null)}
             className="ml-2 text-[#A3A3A3] hover:text-[#FAFAFA]"
           >
@@ -367,23 +546,43 @@ export default function App() {
         </div>
       )}
 
-      <NewPersonModal
-        isOpen={isNewPersonModalOpen}
-        onClose={() => setIsNewPersonModalOpen(false)}
+      <PersonFormModal
+        isOpen={personForm.abierto}
+        onClose={() => setPersonForm({ abierto: false, persona: null })}
         groups={groups}
-        onAddPerson={handleAddPerson}
+        personToEdit={personForm.persona}
+        onSave={handleSavePerson}
       />
 
       <PersonDetailModal
         person={selectedPersonForDetail}
         onClose={() => setSelectedPersonForDetail(null)}
         onPromotePhase={can('promoverFase') ? handlePromotePerson : undefined}
+        onEdit={can('registrarMiembro') ? (p) => { setSelectedPersonForDetail(null); setPersonForm({ abierto: true, persona: p }); } : undefined}
+        onSetAccess={can('gestionarAccesos') ? handleSetAccess : undefined}
+        onDelete={can('eliminar') ? handleDeletePerson : undefined}
+      />
+
+      <EventFormModal
+        isOpen={isEventFormOpen}
+        onClose={() => setIsEventFormOpen(false)}
+        groups={groups}
+        onSave={handleCreateEvent}
+      />
+
+      <EventAttendeesModal
+        event={eventForAttendees}
+        people={people}
+        onClose={() => setEventForAttendees(null)}
+        onSave={handleSaveAttendees}
       />
 
       <SystemArchitectureModal
         isOpen={isArchitectureModalOpen}
         onClose={() => setIsArchitectureModalOpen(false)}
       />
+
+      <ConfirmDialog datos={confirmacion} onCerrar={() => setConfirmacion(null)} />
     </div>
   );
 }

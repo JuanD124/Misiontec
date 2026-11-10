@@ -145,13 +145,13 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
       </div>
 
       <article id="informe-general" className="bg-white border border-[#E8E8E8] rounded-xl shadow-xs p-6 space-y-6 print:border-0 print:shadow-none print:p-0 print:rounded-none">
-        <header className="flex items-start justify-between gap-4 pb-4 border-b-2 border-[#EA580C]">
+        <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 pb-4 border-b-2 border-[#EA580C]">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-[#EA580C]">MISIONTEC</p>
             <h1 className="text-xl font-bold text-[#0A0A0A] mt-0.5">Informe General de Seguimiento</h1>
             <p className="text-xs text-[#6B6B6B] mt-1">Estado de los grupos de discipulado, la asistencia y el acompañamiento de los miembros.</p>
           </div>
-          <div className="text-right text-[11px] text-[#6B6B6B] shrink-0">
+          <div className="sm:text-right text-[11px] text-[#6B6B6B] shrink-0">
             <p><strong className="text-[#0A0A0A]">Generado:</strong> {fechaLarga(informe.generado)}</p>
             <p><strong className="text-[#0A0A0A]">Elaborado para:</strong> {rolActivo}</p>
           </div>

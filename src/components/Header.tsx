@@ -13,6 +13,7 @@ import {
   MapPin, 
   X,
   Radio,
+  Menu,
   ChevronDown
 } from 'lucide-react';
 import { NotificationItem, Person, MissionaryGroup } from '../types';
@@ -27,6 +28,7 @@ interface HeaderProps {
   allGroups: MissionaryGroup[];
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  onOpenMenu: () => void;
   onOpenNewPersonModal: () => void;
   puedeRegistrar?: boolean;
   selectedDistrict: string;
@@ -44,6 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
   allGroups,
   darkMode,
   onToggleDarkMode,
+  onOpenMenu,
   onOpenNewPersonModal,
   puedeRegistrar = true,
   selectedDistrict,
@@ -92,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
       ).slice(0, 2)
     : [];
 
-  const todayFormatted = new Intl.DateTimeFormat('es-PE', {
+  const todayFormatted = new Intl.DateTimeFormat('es-CO', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -102,8 +105,16 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header 
       id="main-app-header"
-      className="h-16 bg-[#FFFFFF] border-b border-[#E8E8E8] px-6 flex items-center justify-between gap-4 sticky top-0 z-20 shadow-xs"
+      className="h-16 bg-[#FFFFFF] border-b border-[#E8E8E8] px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 sticky top-0 z-20 shadow-xs"
     >
+      <button
+        onClick={onOpenMenu}
+        className="lg:hidden p-2 text-[#0A0A0A] rounded-lg hover:bg-[#F2F2F2] shrink-0"
+        aria-label="Abrir menú"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       <div className="flex-1 max-w-xl relative" ref={searchRef}>
         <div className="relative flex items-center">
           <Search className="w-4 h-4 text-[#8A8A8A] absolute left-3 pointer-events-none" />
@@ -113,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             onFocus={() => setSearchFocused(true)}
-            placeholder="Buscar por nombre, DNI, grupo o líder pastoral..."
+            placeholder="Buscar por nombre, documento, grupo o líder pastoral..."
             className="w-full pl-9 pr-8 py-2 bg-[#F5F5F5] border border-[#E0E0E0] text-[#0A0A0A] text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-[#EA580C] focus:bg-white transition-all placeholder:text-[#A3A3A3]"
           />
           {searchQuery && (
@@ -148,7 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-[#0A0A0A]">{person.fullName}</p>
-                        <p className="text-[10px] text-[#6B6B6B]">DNI: {person.dni} • {person.groupName}</p>
+                        <p className="text-[10px] text-[#6B6B6B]">Doc.: {person.dni} • {person.groupName}</p>
                       </div>
                     </div>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
@@ -184,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         <div className="hidden lg:flex items-center gap-1.5 bg-[#FAFAFA] border border-[#E8E8E8] px-2.5 py-1.5 rounded-lg text-xs">
           <MapPin className="w-3.5 h-3.5 text-[#EA580C]" />
           <span className="text-[11px] text-[#6B6B6B]">Zona:</span>

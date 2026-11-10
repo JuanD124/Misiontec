@@ -211,7 +211,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
           {activeTab === 'rbac' && (
             <div className="space-y-3">
               <p className="text-[#404040] text-xs">
-                Cuatro roles en orden de jerarquía. Cada rol solo ve y hace lo que le corresponde:
+                Tres roles en orden de jerarquía. Cada rol solo ve y hace lo que le corresponde:
               </p>
               <div className="overflow-x-auto border border-[#E8E8E8] rounded-xl">
                 <table className="w-full text-left text-xs">
@@ -253,7 +253,7 @@ export const SystemArchitectureModal: React.FC<SystemArchitectureModalProps> = (
                 <div className="p-3.5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8]">
                   <h4 className="font-serif font-bold text-[#0A0A0A]">HERMANO / PERSONA</h4>
                   <p className="text-[11px] text-[#6B6B6B] mt-1">
-                    id, código, DNI, nombres, teléfono, fase de discipulado, estado pastoral, grupo asignado, mentor, inasistencias consecutivas.
+                    id, código, documento, nombres, teléfono, fase de discipulado, estado pastoral, grupo asignado, mentor, inasistencias consecutivas.
                   </p>
                 </div>
                 <div className="p-3.5 bg-[#FAFAFA] rounded-xl border border-[#E8E8E8]">

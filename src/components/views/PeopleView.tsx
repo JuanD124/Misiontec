@@ -39,7 +39,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
   });
 
   const exportCSV = () => {
-    const headers = 'ID,Nombre,DNI,Telefono,Email,Grupo,Fase,Semaforo,Inasistencias\n';
+    const headers = 'ID,Nombre,Documento,Telefono,Email,Grupo,Fase,Semaforo,Inasistencias\n';
     const rows = filteredPeople.map(p => 
       `"${p.code}","${p.fullName}","${p.dni}","${p.phone}","${p.email}","${p.groupName}","${p.phase}","${p.status}",${p.consecutiveAbsences}`
     ).join('\n');
@@ -92,7 +92,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
           <Search className="w-3.5 h-3.5 text-[#8A8A8A] absolute left-2.5 top-2.5" />
           <input
             type="text"
-            placeholder="Buscar por nombre, DNI o teléfono..."
+            placeholder="Buscar por nombre, documento o teléfono..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 bg-[#FAFAFA] border border-[#E0E0E0] rounded-lg text-[#0A0A0A] focus:outline-none focus:border-[#EA580C] placeholder:text-[#A3A3A3]"
@@ -173,7 +173,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
                           {person.fullName}
                         </button>
                         <span className="text-[10px] text-[#6B6B6B]">
-                          {person.code} • DNI {person.dni}
+                          {person.code} • Doc. {person.dni}
                         </span>
                       </div>
                     </div>

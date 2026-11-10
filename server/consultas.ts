@@ -1,4 +1,6 @@
 import { pool } from './db';
+import { puede } from '../src/data/roles';
+import { Sesion } from './sesion';
 import { SEMAFORO, ESTADO_GRUPO } from './mappers';
 import {
   calcularSemaforo,
@@ -33,6 +35,7 @@ export async function obtenerPersonasConEstado(): Promise<PersonaConEstado[]> {
            TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, CURDATE()) AS edad, p.genero, p.direccion,
            d.nombre AS distrito, p.id_grupo, g.nombre AS grupo, p.fase, p.id_mentor,
            CONCAT(m.nombres, ' ', m.apellidos) AS mentor, p.notas_criticas, p.fecha_ingreso,
+           (p.contrasena_hash IS NOT NULL) AS tiene_acceso,
            (SELECT GROUP_CONCAT(e.nombre SEPARATOR '|')
               FROM persona_etiqueta pe JOIN etiqueta e ON e.id_etiqueta = pe.id_etiqueta
              WHERE pe.id_persona = p.id_persona) AS etiquetas
@@ -127,6 +130,7 @@ export function personasParaPantalla(personas: PersonaConEstado[]) {
     criticalNotes: r.notas_criticas ?? undefined,
     enrollmentDate: r.fecha_ingreso,
     tags: r.etiquetas ? r.etiquetas.split('|') : [],
+    hasAccess: Boolean(r.tiene_acceso),
   }));
 }
 
@@ -171,9 +175,10 @@ export function alertasParaPantalla(personas: PersonaConEstado[]) {
 export async function obtenerEventos() {
   const [rows]: any = await pool.query(`
     SELECT e.id_evento, e.titulo, e.fecha, TIME_FORMAT(e.hora, '%H:%i') AS hora, e.lugar, e.tipo,
-           e.publico_objetivo, e.estado,
+           e.publico_objetivo, e.estado, e.id_grupo, g.nombre AS grupo,
            (SELECT COUNT(*) FROM asistencia_evento a WHERE a.id_evento = e.id_evento) AS asistentes
-    FROM evento e WHERE e.activo = 1 ORDER BY e.fecha`);
+    FROM evento e LEFT JOIN grupo g ON g.id_grupo = e.id_grupo
+    WHERE e.activo = 1 ORDER BY e.fecha`);
 
   return rows.map((r: any) => ({
     id: String(r.id_evento),
@@ -184,19 +189,66 @@ export async function obtenerEventos() {
     type: r.tipo,
     attendeesCount: Number(r.asistentes),
     targetAudience: r.publico_objetivo ?? '',
+    groupId: r.id_grupo ? String(r.id_grupo) : '',
+    groupName: r.grupo ?? '',
     status: r.estado === 'cancelado' ? 'concluido' : r.estado,
   }));
 }
 
-export async function datosIniciales() {
+export interface Alcance {
+  todos: boolean;
+  grupos: number[];
+}
+
+export async function calcularAlcance(sesion: Sesion): Promise<Alcance> {
+  if (sesion.rol === 'pastor' || sesion.rol === 'asistente') return { todos: true, grupos: [] };
+
+  const [filas]: any = await pool.query(
+    'SELECT id_grupo FROM grupo WHERE activo = 1 AND (id_lider = ? OR id_asistente = ?)', [sesion.id, sesion.id]);
+  return { todos: false, grupos: filas.map((f: any) => f.id_grupo) };
+}
+
+export const enAlcance = (alcance: Alcance, idGrupo: number | null | undefined) =>
+  alcance.todos || (idGrupo != null && alcance.grupos.includes(idGrupo));
+
+export async function datosIniciales(sesion: Sesion) {
   const personas = await obtenerPersonasConEstado();
   const grupos = await obtenerGruposConIndicadores(personas);
+  const alcance = await calcularAlcance(sesion);
+
+  const visibles = puede(sesion.rol, 'verMiembros')
+    ? personas.filter((p) => enAlcance(alcance, p.fila.id_grupo))
+    : [];
+
   return {
-    people: personasParaPantalla(personas),
-    groups: gruposParaPantalla(grupos),
-    notifications: alertasParaPantalla(personas),
-    events: await obtenerEventos(),
+    people: personasParaPantalla(visibles),
+    groups: gruposParaPantalla(grupos.filter((g) => enAlcance(alcance, g.fila.id_grupo))),
+    notifications: puede(sesion.rol, 'verCuidado') ? alertasParaPantalla(visibles) : [],
+    events: puede(sesion.rol, 'verEventos') ? await obtenerEventos() : [],
   };
+}
+
+export async function obtenerHistorial(idPersona: string) {
+  const [filas]: any = await pool.query(`
+    SELECT fase, fecha_inicio, fecha_fin, observaciones
+    FROM historial_discipulado WHERE id_persona = ?
+    ORDER BY fecha_inicio DESC, id_historial DESC`, [idPersona]);
+  return filas.map((h: any) => ({
+    phase: h.fase,
+    from: h.fecha_inicio,
+    to: h.fecha_fin,
+    note: h.observaciones ?? '',
+  }));
+}
+
+export async function obtenerGrupoDePersona(idPersona: string): Promise<number | null> {
+  const [[p]]: any = await pool.query('SELECT id_grupo FROM persona WHERE id_persona = ?', [idPersona]);
+  return p ? (p.id_grupo ?? null) : null;
+}
+
+export async function obtenerAsistentesEvento(idEvento: string): Promise<number[]> {
+  const [filas]: any = await pool.query('SELECT id_persona FROM asistencia_evento WHERE id_evento = ?', [idEvento]);
+  return filas.map((f: any) => f.id_persona);
 }
 
 export async function calcularResumen(personas: PersonaConEstado[], grupos: GrupoConIndicadores[]) {
@@ -231,13 +283,14 @@ export async function resumenParaDashboard() {
   };
 }
 
-export async function obtenerGruposCercanos(lat: number, lng: number, radioKm: number) {
+export async function obtenerGruposCercanos(lat: number, lng: number, radioKm: number, alcance?: Alcance) {
   const [grupos]: any = await pool.query(`
     SELECT id_grupo, codigo, nombre, direccion, barrio, dia_reunion, hora_reunion, latitud, longitud
     FROM grupo WHERE activo = 1`);
 
   return grupos
     .map((g: any) => ({ g, distancia: distanciaKm(lat, lng, Number(g.latitud), Number(g.longitud)) }))
+    .filter(({ g }: any) => !alcance || enAlcance(alcance, g.id_grupo))
     .filter(({ distancia }: any) => distancia <= radioKm)
     .sort((a: any, b: any) => a.distancia - b.distancia)
     .map(({ g, distancia }: any) => ({

@@ -6,7 +6,7 @@ export type DiscipleshipPhase =
   | 'formacion' 
   | 'liderazgo';
 
-export type UserRole = 'pastor' | 'asistente' | 'discipulador' | 'discipulo';
+export type UserRole = 'pastor' | 'asistente' | 'discipulador';
 
 export interface Person {
   id: string;
@@ -31,6 +31,7 @@ export interface Person {
   avatarUrl?: string;
   enrollmentDate: string;
   tags: string[];
+  hasAccess?: boolean;
 }
 
 export interface MissionaryGroup {
@@ -90,4 +91,12 @@ export interface MissionEvent {
   attendeesCount: number;
   targetAudience: string;
   status: 'programado' | 'en_curso' | 'concluido';
+  groupId?: string;
+  groupName?: string;
+}
+
+export interface SesionUsuario {
+  id: number;
+  nombre: string;
+  rol: UserRole;
 }

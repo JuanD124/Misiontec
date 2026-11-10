@@ -4,7 +4,14 @@ import type {
   NotificationItem,
   MissionEvent,
   DiscipleshipPhase,
+  SesionUsuario,
 } from '../types';
+
+export class ErrorApi extends Error {
+  constructor(public estado: number, mensaje: string) {
+    super(mensaje);
+  }
+}
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
@@ -15,7 +22,7 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
     },
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+  if (!res.ok) throw new ErrorApi(res.status, data.error || `Error ${res.status}`);
   return data as T;
 }
 
@@ -48,6 +55,23 @@ export interface InformeGeneral {
   nuevos: { codigo: string; nombre: string; grupo: string; fase: string; ingreso: string }[];
 }
 
+export interface HistorialFase {
+  phase: DiscipleshipPhase;
+  from: string;
+  to: string | null;
+  note: string;
+}
+
+export interface DatosEvento {
+  title: string;
+  type: string;
+  date: string;
+  time: string;
+  location: string;
+  targetAudience?: string;
+  groupId?: string;
+}
+
 export interface DatosIniciales {
   people: Person[];
   groups: MissionaryGroup[];
@@ -56,10 +80,25 @@ export interface DatosIniciales {
 }
 
 export const api = {
+  yo: () => request<SesionUsuario>('/api/yo'),
+
+  login: (documento: string, contrasena: string) =>
+    request<SesionUsuario>('/api/login', { method: 'POST', body: JSON.stringify({ documento, contrasena }) }),
+
+  logout: () => request('/api/logout', { method: 'POST' }),
+
   cargarTodo: () => request<DatosIniciales>('/api/inicio'),
 
   crearPersona: (data: Partial<Person>) =>
     request<Person>('/api/personas', { method: 'POST', body: JSON.stringify(data) }),
+
+  editarPersona: (personId: string, data: Partial<Person>) =>
+    request(`/api/personas/${personId}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  historial: (personId: string) => request<HistorialFase[]>(`/api/personas/${personId}/historial`),
+
+  definirAcceso: (personId: string, contrasena: string) =>
+    request(`/api/personas/${personId}/acceso`, { method: 'PUT', body: JSON.stringify({ contrasena }) }),
 
   cambiarFase: (personId: string, phase: DiscipleshipPhase) =>
     request(`/api/personas/${personId}/fase`, { method: 'PATCH', body: JSON.stringify({ phase }) }),
@@ -73,6 +112,16 @@ export const api = {
     items: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>,
     topic?: string,
   ) => request('/api/asistencias', { method: 'POST', body: JSON.stringify({ groupId, date, items, topic }) }),
+
+  crearEvento: (data: DatosEvento) =>
+    request<{ id: string }>('/api/eventos', { method: 'POST', body: JSON.stringify(data) }),
+
+  asistentesEvento: (eventId: string) => request<number[]>(`/api/eventos/${eventId}/asistencia`),
+
+  guardarAsistentesEvento: (eventId: string, personIds: number[]) =>
+    request(`/api/eventos/${eventId}/asistencia`, { method: 'POST', body: JSON.stringify({ personIds }) }),
+
+  eliminarEvento: (eventId: string) => request(`/api/eventos/${eventId}`, { method: 'DELETE' }),
 
   informeGeneral: () => request<InformeGeneral>('/api/informe/general'),
 
