@@ -12,8 +12,6 @@ import {
   ShieldCheck,
   LogOut,
   Cross,
-  Sparkles,
-  Info,
   X,
 } from 'lucide-react';
 import { SesionUsuario } from '../types';
@@ -30,7 +28,6 @@ interface SidebarProps {
   accessCount: number;
   abierto: boolean;
   onCerrar: () => void;
-  onOpenArchitectureModal: () => void;
 }
 
 const iniciales = (nombre: string) =>
@@ -47,7 +44,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   accessCount,
   abierto,
   onCerrar,
-  onOpenArchitectureModal,
 }) => {
   const rol = infoRol(usuario.rol);
 
@@ -147,20 +143,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             );
           })}
-
-          <div className="pt-4 mt-3 border-t border-[#262626]">
-            <button
-              id="btn-open-sys-architecture"
-              onClick={onOpenArchitectureModal}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium bg-[#1A1A1A] border border-[#404040] text-[#D4D4D4] hover:text-white hover:border-[#FDBA74] transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#FDBA74]" />
-                <span>Ficha Técnica & Modelo</span>
-              </div>
-              <Info className="w-3.5 h-3.5 text-[#A3A3A3]" />
-            </button>
-          </div>
         </div>
 
         <div className="p-3 border-t border-[#262626] bg-[#000000]">

@@ -25,7 +25,6 @@ import { GroupFormModal } from './components/modals/GroupFormModal';
 import { AccessFormModal } from './components/modals/AccessFormModal';
 import { AccessView } from './components/views/AccessView';
 import { EventAttendeesModal } from './components/modals/EventAttendeesModal';
-import { SystemArchitectureModal } from './components/modals/SystemArchitectureModal';
 import { ConfirmDialog, DatosConfirmacion } from './components/modals/ConfirmDialog';
 import { puede, infoRol, vistaPermitida, primeraVista, Funcion } from './data/roles';
 import { PeopleView } from './components/views/PeopleView';
@@ -68,7 +67,6 @@ export default function App() {
   const [groupForm, setGroupForm] = useState<{ abierto: boolean; grupo: MissionaryGroup | null }>({ abierto: false, grupo: null });
   const [accessForm, setAccessForm] = useState<{ abierto: boolean; persona: Person | null }>({ abierto: false, persona: null });
   const [eventForAttendees, setEventForAttendees] = useState<MissionEvent | null>(null);
-  const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState(false);
   const [confirmacion, setConfirmacion] = useState<DatosConfirmacion | null>(null);
 
   const comprobarSesion = () => {
@@ -443,7 +441,6 @@ export default function App() {
         accessCount={people.filter((p) => p.hasAccess).length}
         abierto={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
-        onOpenArchitectureModal={() => { setIsArchitectureModalOpen(true); setMenuAbierto(false); }}
       />
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
@@ -479,15 +476,6 @@ export default function App() {
                   <p className="text-xs text-[#6B6B6B] mt-0.5">
                     Consolidado de cobertura territorial, cuidado de discípulos en grupos y seguimiento discipular.
                   </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsArchitectureModalOpen(true)}
-                    className="px-3.5 py-1.5 bg-[#FAFAFA] hover:bg-[#F2F2F2] text-[#EA580C] border border-[#E0E0E0] rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Info className="w-3.5 h-3.5 text-[#EA580C]" />
-                    <span>Ficha Pastoral & Arquitectura</span>
-                  </button>
                 </div>
               </div>
 
@@ -700,11 +688,6 @@ export default function App() {
         people={people}
         onClose={() => setEventForAttendees(null)}
         onSave={handleSaveAttendees}
-      />
-
-      <SystemArchitectureModal
-        isOpen={isArchitectureModalOpen}
-        onClose={() => setIsArchitectureModalOpen(false)}
       />
 
       <ConfirmDialog datos={confirmacion} onCerrar={() => setConfirmacion(null)} />
