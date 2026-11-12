@@ -15,6 +15,8 @@ import {
 
 export interface PersonaConEstado {
   fila: any;
+  /** true si la persona es del equipo (Pastor, Asistente pastoral o Discipulador); false si es un discípulo. */
+  equipo: boolean;
   nombreCompleto: string;
   faltas: number;
   ultimaAsistencia: string | null;
@@ -29,6 +31,9 @@ export interface GrupoConIndicadores {
   rojos: number;
   amarillos: number;
 }
+
+/** Condición SQL: la persona p no tiene ningún rol vigente, es decir, es un discípulo y no parte del equipo. */
+export const ES_DISCIPULO = `NOT EXISTS (SELECT 1 FROM persona_rol pr WHERE pr.id_persona = p.id_persona AND pr.activo = 1)`;
 
 export async function obtenerPersonasConEstado(): Promise<PersonaConEstado[]> {
   const [filas]: any = await pool.query(`
@@ -67,6 +72,7 @@ export async function obtenerPersonasConEstado(): Promise<PersonaConEstado[]> {
     const { faltasConsecutivas, ultimaAsistencia } = resumirAsistencia(porPersona.get(fila.id_persona) ?? []);
     return {
       fila,
+      equipo: fila.rol_app !== null,
       nombreCompleto: `${fila.nombres} ${fila.apellidos}`,
       faltas: faltasConsecutivas,
       ultimaAsistencia,
@@ -222,16 +228,30 @@ export const enAlcance = (alcance: Alcance, idGrupo: number | null | undefined) 
   alcance.todos || (idGrupo != null && alcance.grupos.includes(idGrupo));
 
 export async function datosIniciales(sesion: Sesion) {
-  const personas = await obtenerPersonasConEstado();
-  const grupos = await obtenerGruposConIndicadores(personas);
+  const todas = await obtenerPersonasConEstado();
+  const discipulos = todas.filter((p) => !p.equipo);
+  const grupos = await obtenerGruposConIndicadores(discipulos);
   const alcance = await calcularAlcance(sesion);
 
   const visibles = puede(sesion.rol, 'verMiembros')
-    ? personas.filter((p) => enAlcance(alcance, p.fila.id_grupo))
+    ? discipulos.filter((p) => enAlcance(alcance, p.fila.id_grupo))
+    : [];
+
+  const gruposQueDirige = (idPersona: number) =>
+    grupos
+      .filter((g) => g.fila.id_lider === idPersona || g.fila.id_asistente === idPersona)
+      .map((g) => `${g.fila.codigo} ${g.fila.nombre}`);
+
+  const equipo = puede(sesion.rol, 'verPadron')
+    ? personasParaPantalla(todas.filter((p) => p.equipo)).map((p) => ({
+        ...p,
+        ledGroups: gruposQueDirige(Number(p.id)),
+      }))
     : [];
 
   return {
     people: personasParaPantalla(visibles),
+    team: equipo,
     groups: gruposParaPantalla(grupos.filter((g) => enAlcance(alcance, g.fila.id_grupo))),
     notifications: puede(sesion.rol, 'verCuidado') ? alertasParaPantalla(visibles) : [],
     events: puede(sesion.rol, 'verEventos') ? await obtenerEventos() : [],
@@ -263,7 +283,8 @@ export async function obtenerAsistentesEvento(idEvento: string): Promise<number[
 
 export async function calcularResumen(personas: PersonaConEstado[], grupos: GrupoConIndicadores[]) {
   const [[nuevos]]: any = await pool.query(
-    'SELECT COUNT(*) AS n FROM persona WHERE activo = 1 AND fecha_ingreso >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)');
+    `SELECT COUNT(*) AS n FROM persona p WHERE p.activo = 1 AND p.fecha_ingreso >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+       AND ${ES_DISCIPULO}`);
   const [[proximos]]: any = await pool.query(
     "SELECT COUNT(*) AS n FROM evento WHERE activo = 1 AND estado = 'programado' AND fecha >= CURDATE()");
 
@@ -279,7 +300,7 @@ export async function calcularResumen(personas: PersonaConEstado[], grupos: Grup
 }
 
 export async function resumenParaDashboard() {
-  const personas = await obtenerPersonasConEstado();
+  const personas = (await obtenerPersonasConEstado()).filter((p) => !p.equipo);
   const grupos = await obtenerGruposConIndicadores(personas);
   const r = await calcularResumen(personas, grupos);
   return {
@@ -354,7 +375,7 @@ const porcentaje = (parte: number, total: number) => (total > 0 ? Math.round((10
 
 export async function informeGeneral(desdeEntrada?: unknown, hastaEntrada?: unknown) {
   const { desde, hasta } = validarPeriodo(desdeEntrada, hastaEntrada);
-  const personas = await obtenerPersonasConEstado();
+  const personas = (await obtenerPersonasConEstado()).filter((p) => !p.equipo);
   const grupos = await obtenerGruposConIndicadores(personas);
   const resumen = await calcularResumen(personas, grupos);
   const [[{ hoy }]]: any = await pool.query('SELECT CURDATE() AS hoy');
@@ -422,11 +443,12 @@ export async function informeGeneral(desdeEntrada?: unknown, hastaEntrada?: unkn
   const [nuevos]: any = await pool.query(`
     SELECT p.codigo, CONCAT(p.nombres, ' ', p.apellidos) AS nombre, g.nombre AS grupo, p.fase, p.fecha_ingreso
     FROM persona p LEFT JOIN grupo g ON g.id_grupo = p.id_grupo
-    WHERE p.activo = 1 AND p.fecha_ingreso BETWEEN ? AND ?
+    WHERE p.activo = 1 AND p.fecha_ingreso BETWEEN ? AND ? AND ${ES_DISCIPULO}
     ORDER BY p.fecha_ingreso DESC, p.id_persona DESC`, [desde, hasta]);
 
   const [personasEdad]: any = await pool.query(
-    'SELECT id_persona, fecha_nacimiento, genero FROM persona WHERE activo = 1 AND fecha_ingreso <= ?', [hasta]);
+    `SELECT p.id_persona, p.fecha_nacimiento, p.genero FROM persona p
+     WHERE p.activo = 1 AND p.fecha_ingreso <= ? AND ${ES_DISCIPULO}`, [hasta]);
   const [asistenciaPersonas]: any = await pool.query(`
     SELECT d.id_persona, COALESCE(SUM(d.estado = 'presente'), 0) AS presentes,
            COALESCE(SUM(d.estado <> 'presente'), 0) AS faltas, COUNT(*) AS registros

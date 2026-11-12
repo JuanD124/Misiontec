@@ -86,7 +86,7 @@ export const VISTAS: Record<string, Funcion> = {
   alertas: 'verCuidado',
   eventos: 'verEventos',
   reportes: 'verReportes',
-  accesos: 'gestionarAccesos',
+  equipo: 'verPadron',
 };
 
 export const infoRol = (rol: UserRole): InfoRol => ROLES.find((r) => r.clave === rol) ?? ROLES[ROLES.length - 1];

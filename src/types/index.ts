@@ -33,7 +33,10 @@ export interface Person {
   enrollmentDate: string;
   tags: string[];
   hasAccess?: boolean;
+  /** Rol dentro del equipo (Pastor, Asistente pastoral, Discipulador). Los discípulos no tienen rol. */
   accessRole?: UserRole;
+  /** Solo para el equipo: grupos de comunión que dirige o en los que asiste. */
+  ledGroups?: string[];
 }
 
 export interface MissionaryGroup {

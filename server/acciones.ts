@@ -256,7 +256,6 @@ export async function quitarAcceso(id: string, idQuienPide: number): Promise<voi
     const [r]: any = await conn.query(
       'UPDATE persona SET contrasena_hash = NULL WHERE id_persona = ? AND activo = 1', [id]);
     if (r.affectedRows === 0) throw new ErrorNegocio(404, 'La persona no existe.');
-    await conn.query('UPDATE persona_rol SET activo = 0, fecha_fin = CURDATE() WHERE id_persona = ? AND activo = 1', [id]);
   });
 }
 
@@ -313,11 +312,24 @@ async function comprobarPersonaActiva(conn: any, id: number | null, etiqueta: st
   if (!p) throw new ErrorNegocio(400, `${etiqueta} no existe o fue eliminado.`);
 }
 
+/** Quien lidera un grupo es parte del equipo: si aún no tiene rol, queda como Discipulador (sin acceso a la aplicación). */
+async function asegurarEquipo(conn: any, id: number | null): Promise<void> {
+  if (id === null) return;
+  const [[vigente]]: any = await conn.query('SELECT id_persona_rol FROM persona_rol WHERE id_persona = ? AND activo = 1', [id]);
+  if (vigente) return;
+  const [[rolBase]]: any = await conn.query("SELECT id_rol FROM rol WHERE nombre = 'Discipulador' AND activo = 1");
+  if (!rolBase) return;
+  await conn.query(
+    `INSERT INTO persona_rol (id_persona, id_rol, fecha_inicio) VALUES (?, ?, CURDATE())
+     ON DUPLICATE KEY UPDATE activo = 1, fecha_fin = NULL`, [id, rolBase.id_rol]);
+}
+
 export async function crearGrupo(b: any): Promise<number> {
   const g = validarGrupo(b);
   return withTransaction(async (conn) => {
     await comprobarPersonaActiva(conn, g.idLider, 'El líder elegido');
     await comprobarPersonaActiva(conn, g.idAsistente, 'El asistente elegido');
+    await asegurarEquipo(conn, g.idLider);
     const idZona = await buscarOCrearZona(conn, g.distrito, g.zona);
     const [[{ siguiente }]]: any = await conn.query(
       "SELECT CONCAT('GC-', LPAD(IFNULL(MAX(id_grupo), 0) + 1, 3, '0')) AS siguiente FROM grupo");
@@ -337,6 +349,7 @@ export async function editarGrupo(id: string, b: any): Promise<void> {
     if (!actual) throw new ErrorNegocio(404, 'El grupo no existe.');
     await comprobarPersonaActiva(conn, g.idLider, 'El líder elegido');
     await comprobarPersonaActiva(conn, g.idAsistente, 'El asistente elegido');
+    await asegurarEquipo(conn, g.idLider);
     const idZona = await buscarOCrearZona(conn, g.distrito, g.zona);
     await conn.query(
       `UPDATE grupo SET nombre = ?, id_zona = ?, id_lider = ?, id_asistente = ?, direccion = ?, barrio = ?,

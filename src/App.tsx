@@ -25,7 +25,7 @@ import { PersonDetailModal } from './components/modals/PersonDetailModal';
 import { EventFormModal } from './components/modals/EventFormModal';
 import { GroupFormModal } from './components/modals/GroupFormModal';
 import { AccessFormModal } from './components/modals/AccessFormModal';
-import { AccessView } from './components/views/AccessView';
+import { TeamView } from './components/views/TeamView';
 import { EventAttendeesModal } from './components/modals/EventAttendeesModal';
 import { ConfirmDialog, DatosConfirmacion } from './components/modals/ConfirmDialog';
 import { puede, infoRol, vistaPermitida, primeraVista, Funcion } from './data/roles';
@@ -49,6 +49,7 @@ export default function App() {
   const [errorInicial, setErrorInicial] = useState<string | null>(null);
 
   const [people, setPeople] = useState<Person[]>([]);
+  const [team, setTeam] = useState<Person[]>([]);
   const [groups, setGroups] = useState<MissionaryGroup[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [events, setEvents] = useState<MissionEvent[]>([]);
@@ -101,9 +102,9 @@ export default function App() {
 
   useEffect(() => {
     if (!selectedPersonForDetail) return;
-    const actualizada = people.find((p) => p.id === selectedPersonForDetail.id);
+    const actualizada = [...people, ...team].find((p) => p.id === selectedPersonForDetail.id);
     if (actualizada && actualizada !== selectedPersonForDetail) setSelectedPersonForDetail(actualizada);
-  }, [people]);
+  }, [people, team]);
 
   const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMessage({ text, type });
@@ -122,6 +123,7 @@ export default function App() {
     try {
       const data = await api.cargarTodo();
       setPeople(data.people);
+      setTeam(data.team ?? []);
       setGroups(data.groups);
       setNotifications(data.notifications);
       setEvents(data.events);
@@ -150,6 +152,7 @@ export default function App() {
     await api.logout().catch(() => undefined);
     setSesion(null);
     setPeople([]);
+    setTeam([]);
     setGroups([]);
     setNotifications([]);
     setEvents([]);
@@ -191,6 +194,8 @@ export default function App() {
 
   const rol = sesion.rol;
   const can = (funcion: Funcion) => puede(rol, funcion);
+
+  const todos = [...people, ...team];
 
   const districts = Array.from(new Set(groups.map(g => g.district))).sort();
 
@@ -440,7 +445,7 @@ export default function App() {
         criticalAlertsCount={criticalCount}
         peopleCount={people.length}
         groupsCount={groups.length}
-        accessCount={people.filter((p) => p.hasAccess).length}
+        teamCount={team.length}
         abierto={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
       />
@@ -452,10 +457,10 @@ export default function App() {
           notifications={can('verCuidado') ? notifications : []}
           onMarkNotificationAsRead={handleMarkNotificationAsRead}
           onSelectPersonFromSearch={(personId) => {
-            const found = people.find(p => p.id === personId);
+            const found = todos.find(p => p.id === personId);
             if (found) setSelectedPersonForDetail(found);
           }}
-          allPeople={can('verMiembros') ? people : []}
+          allPeople={can('verMiembros') ? todos : []}
           allGroups={groups}
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
@@ -611,14 +616,15 @@ export default function App() {
             </div>
           )}
 
-          {currentView === 'accesos' && can('gestionarAccesos') && (
+          {currentView === 'equipo' && can('verPadron') && (
             <div className="max-w-5xl mx-auto animate-in fade-in duration-150">
-              <AccessView
-                people={people}
+              <TeamView
+                team={team}
                 sesionId={sesion.id}
-                onCreate={() => setAccessForm({ abierto: true, persona: null })}
-                onEdit={(p) => setAccessForm({ abierto: true, persona: p })}
-                onRemove={handleConfirmRemoveAccess}
+                onCreate={can('gestionarAccesos') ? () => setAccessForm({ abierto: true, persona: null }) : undefined}
+                onEdit={can('gestionarAccesos') ? (p) => setAccessForm({ abierto: true, persona: p }) : undefined}
+                onRemove={can('gestionarAccesos') ? handleConfirmRemoveAccess : undefined}
+                onOpenDetail={setSelectedPersonForDetail}
               />
             </div>
           )}
@@ -671,7 +677,7 @@ export default function App() {
       <AccessFormModal
         isOpen={accessForm.abierto}
         onClose={() => setAccessForm({ abierto: false, persona: null })}
-        people={people}
+        people={todos}
         personToEdit={accessForm.persona}
         sesionId={sesion.id}
         onCreate={handleCreateAccess}
@@ -683,6 +689,7 @@ export default function App() {
         onClose={() => setGroupForm({ abierto: false, grupo: null })}
         groups={groups}
         people={people}
+        team={team}
         groupToEdit={groupForm.grupo}
         onSave={handleSaveGroup}
       />
@@ -695,7 +702,7 @@ export default function App() {
 
       <EventAttendeesModal
         event={eventForAttendees}
-        people={people}
+        people={todos}
         onClose={() => setEventForAttendees(null)}
         onSave={handleSaveAttendees}
       />

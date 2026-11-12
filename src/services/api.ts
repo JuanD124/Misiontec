@@ -116,6 +116,7 @@ export interface DatosGrupo {
 
 export interface DatosIniciales {
   people: Person[];
+  team: Person[];
   groups: MissionaryGroup[];
   notifications: NotificationItem[];
   events: MissionEvent[];

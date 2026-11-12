@@ -11,6 +11,8 @@ interface GroupFormModalProps {
   onClose: () => void;
   groups: MissionaryGroup[];
   people: Person[];
+  /** Equipo pastoral: de aquí sale el líder del grupo. */
+  team: Person[];
   groupToEdit: MissionaryGroup | null;
   onSave: (data: DatosGrupo, groupId?: string) => Promise<void>;
 }
@@ -37,7 +39,7 @@ const numeroValido = (texto: string, min: number, max: number) => {
   return Number.isFinite(n) && n >= min && n <= max ? n : null;
 };
 
-export const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose, groups, people, groupToEdit, onSave }) => {
+export const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose, groups, people, team, groupToEdit, onSave }) => {
   const editando = Boolean(groupToEdit);
 
   const [name, setName] = useState('');
@@ -209,8 +211,11 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose,
 
   const distritos = Array.from(new Set(groups.map((g) => g.district).filter(Boolean)));
   const zonas = Array.from(new Set(groups.map((g) => g.zone).filter(Boolean)));
-  const personas = [...people].sort((a, b) => a.fullName.localeCompare(b.fullName, 'es'));
-  const etiquetaPersona = (p: Person) => `${p.fullName}${p.accessRole ? ` (${infoRol(p.accessRole).nombre})` : ''}`;
+  const porNombre = (a: Person, b: Person) => a.fullName.localeCompare(b.fullName, 'es');
+  const etiquetaPersona = (p: Person) => `${p.fullName}${p.accessRole ? ` (${infoRol(p.accessRole).nombre})` : ' (Discípulo)'}`;
+  // El líder sale del equipo pastoral; el asistente puede ser del equipo o un discípulo en formación.
+  const lideres = [...team].sort(porNombre);
+  const asistentes = [...team, ...people].sort(porNombre);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-[#0A0A0A]/50 backdrop-blur-xs animate-in fade-in duration-200">
@@ -278,10 +283,10 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose,
               <input type="time" value={meetingTime} onChange={(e) => setMeetingTime(e.target.value)} className={campo(Boolean(errores.meetingTime))} />
             </div>
             <div className="col-span-2">
-              <label className="block font-medium text-[#0A0A0A] mb-1">Líder (Discipulador)</label>
+              <label className="block font-medium text-[#0A0A0A] mb-1">Líder (del equipo pastoral)</label>
               <select value={leaderId} onChange={(e) => setLeaderId(e.target.value)} className={campo(false)}>
                 <option value="">Sin líder por ahora</option>
-                {personas.map((p) => <option key={p.id} value={p.id}>{etiquetaPersona(p)}</option>)}
+                {lideres.map((p) => <option key={p.id} value={p.id}>{etiquetaPersona(p)}</option>)}
               </select>
             </div>
           </div>
@@ -291,7 +296,7 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({ isOpen, onClose,
               <label className="block font-medium text-[#0A0A0A] mb-1">Asistente del grupo</label>
               <select value={assistantId} onChange={(e) => setAssistantId(e.target.value)} className={campo(Boolean(errores.assistantId))}>
                 <option value="">Sin asistente</option>
-                {personas.map((p) => <option key={p.id} value={p.id}>{etiquetaPersona(p)}</option>)}
+                {asistentes.map((p) => <option key={p.id} value={p.id}>{etiquetaPersona(p)}</option>)}
               </select>
               {errores.assistantId && <p className="mt-1 text-[11px] text-[#DC2626]">{errores.assistantId}</p>}
             </div>

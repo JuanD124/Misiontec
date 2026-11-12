@@ -33,6 +33,11 @@ SELECT 'GC-002', 'Grupo Monte Sión', z.id_zona, (SELECT id_persona FROM persona
        'Cl 60 Sur # 18-25', 'Porfía', 4.0847000, -73.6735000, 'Viernes', '19:00', 'activo', '2026-02-20'
 FROM zona z WHERE z.nombre = 'Zona Porfía';
 
+-- Quien lidera un grupo es parte del equipo (rol Discipulador, sin acceso a la aplicación).
+INSERT INTO persona_rol (id_persona, id_rol, fecha_inicio)
+SELECT p.id_persona, (SELECT id_rol FROM rol WHERE nombre = 'Discipulador'), '2025-02-10'
+FROM persona p WHERE p.codigo = 'MT-0004';
+
 UPDATE persona SET id_grupo = (SELECT id_grupo FROM grupo WHERE codigo = 'GC-001'),
                    id_mentor = (SELECT id_persona FROM (SELECT id_persona FROM persona WHERE codigo = 'MT-0003') t)
  WHERE codigo IN ('MT-0005','MT-0006','MT-0007','MT-0008');

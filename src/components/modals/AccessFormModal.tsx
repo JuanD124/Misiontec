@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, KeyRound, CheckCircle2, RefreshCw, Eye, EyeOff, Wand2 } from 'lucide-react';
+import { X, KeyRound, CheckCircle2, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { Person, UserRole } from '../../types';
 import { DatosAcceso } from '../../services/api';
 import { ROLES, infoRol } from '../../data/roles';
@@ -18,13 +18,6 @@ const campo = (conError: boolean) =>
   `w-full px-3 py-2 bg-white border rounded-lg focus:outline-none text-[#0A0A0A] ${
     conError ? 'border-[#DC2626]' : 'border-[#E0E0E0] focus:border-[#EA580C]'
   }`;
-
-const generarClave = () => {
-  const letras = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  const bytes = new Uint32Array(10);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => letras[b % letras.length]).join('');
-};
 
 export const AccessFormModal: React.FC<AccessFormModalProps> = ({
   isOpen, onClose, people, personToEdit, sesionId, onCreate, onUpdate,
@@ -222,14 +215,6 @@ export const AccessFormModal: React.FC<AccessFormModalProps> = ({
                   {verClave ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => { setPassword(generarClave()); setVerClave(true); }}
-                className="flex items-center gap-1.5 px-3 py-2 bg-[#FAFAFA] hover:bg-[#F2F2F2] text-[#EA580C] border border-[#E0E0E0] rounded-lg font-medium whitespace-nowrap"
-              >
-                <Wand2 className="w-3.5 h-3.5" />
-                Generar
-              </button>
             </div>
             {errores.password && <p className="mt-1 text-[11px] text-[#DC2626]">{errores.password}</p>}
             <p className="mt-1 text-[11px] text-[#6B6B6B]">Entrégasela a la persona: la aplicación no la vuelve a mostrar, solo guarda una versión cifrada.</p>
