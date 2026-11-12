@@ -12,15 +12,20 @@ import {
   X,
   ExternalLink,
   Compass,
-  Church
+  Church,
+  CalendarDays
 } from 'lucide-react';
-import { MissionaryGroup } from '../types';
+import { MissionaryGroup, MissionEvent } from '../types';
+import { NOMBRE_TIPO_EVENTO, fechaCorta } from '../utils/formato';
 
 interface InteractiveMapProps {
   groups: MissionaryGroup[];
+  events?: MissionEvent[];
   onSelectGroup?: (group: MissionaryGroup) => void;
   onQuickAttendanceForGroup?: (groupId: string) => void;
 }
+
+type EventoUbicado = MissionEvent & { lat: number; lng: number };
 
 const MAPAS_BASE = {
   streets: {
@@ -57,12 +62,31 @@ const iconoGrupo = (grp: MissionaryGroup, seleccionado: boolean) => {
   return L.divIcon({ html, className: '', iconSize: [tam, tam], iconAnchor: [tam / 2, tam / 2] });
 };
 
+const iconoEvento = (titulo: string, seleccionado: boolean) => {
+  const tam = seleccionado ? 34 : 28;
+  const sombra = seleccionado
+    ? '0 0 0 5px rgba(234,88,12,.3), 0 3px 8px rgba(10,10,10,.4)'
+    : '0 2px 6px rgba(10,10,10,.35)';
+  const corto = titulo.length > 22 ? `${titulo.slice(0, 21)}…` : titulo;
+  const html = `
+    <div style="position:relative;width:${tam}px;height:${tam}px">
+      <div style="width:${tam}px;height:${tam}px;border-radius:8px;background:#0A0A0A;border:2px solid #EA580C;box-shadow:${sombra};display:flex;align-items:center;justify-content:center">
+        <svg width="${tam * 0.55}" height="${tam * 0.55}" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </div>
+      <div style="position:absolute;left:50%;top:${tam + 3}px;transform:translateX(-50%);white-space:nowrap;text-align:center;font:600 10px 'Plus Jakarta Sans',system-ui,sans-serif;color:#C2410C;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff">${escapar(corto)}</div>
+    </div>`;
+  return L.divIcon({ html, className: '', iconSize: [tam, tam], iconAnchor: [tam / 2, tam / 2] });
+};
+
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   groups,
+  events = [],
   onSelectGroup,
   onQuickAttendanceForGroup
 }) => {
   const [selectedGroup, setSelectedGroup] = useState<MissionaryGroup | null>(groups[0] || null);
+  const [selectedEvent, setSelectedEvent] = useState<EventoUbicado | null>(null);
+  const [showEvents, setShowEvents] = useState(true);
   const [searchRadiusKm, setSearchRadiusKm] = useState<number>(10);
   const [mapLayer, setMapLayer] = useState<'streets' | 'satellite' | 'heatmap'>('streets');
 
@@ -73,16 +97,24 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const alSeleccionarRef = useRef(onSelectGroup);
   alSeleccionarRef.current = onSelectGroup;
 
-  const idsGrupos = groups.map(g => g.id).join(',');
+  const eventosUbicados = events.filter(
+    (e): e is EventoUbicado => e.lat !== null && e.lng !== null && e.status !== 'concluido',
+  );
+  const eventosVisibles = showEvents ? eventosUbicados : [];
+  const idsGrupos = groups.map(g => g.id).join(',') + '|' + eventosVisibles.map(e => e.id).join(',');
 
   const ajustarVista = () => {
     const mapa = mapaRef.current;
     if (!mapa) return;
-    if (groups.length === 0) {
+    const puntos: L.LatLngTuple[] = [
+      ...groups.map(g => [g.lat, g.lng] as L.LatLngTuple),
+      ...eventosVisibles.map(e => [e.lat, e.lng] as L.LatLngTuple),
+    ];
+    if (puntos.length === 0) {
       mapa.setView(CENTRO_VILLAVICENCIO, 12);
       return;
     }
-    mapa.fitBounds(L.latLngBounds(groups.map(g => [g.lat, g.lng] as L.LatLngTuple)), {
+    mapa.fitBounds(L.latLngBounds(puntos), {
       padding: [70, 70],
       maxZoom: 14,
     });
@@ -159,14 +191,29 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       })
         .on('click', () => {
           setSelectedGroup(grp);
+          setSelectedEvent(null);
           alSeleccionarRef.current?.(grp);
         })
         .addTo(capa);
     });
-  }, [groups, selectedGroup, mapLayer, searchRadiusKm]);
+
+    eventosVisibles.forEach((evt) => {
+      L.marker([evt.lat, evt.lng], {
+        icon: iconoEvento(evt.title, selectedEvent?.id === evt.id),
+        title: evt.title,
+        zIndexOffset: 500,
+      })
+        .on('click', () => {
+          setSelectedEvent(evt);
+          setSelectedGroup(null);
+        })
+        .addTo(capa);
+    });
+  }, [groups, selectedGroup, selectedEvent, showEvents, events, mapLayer, searchRadiusKm]);
 
   const resetView = () => {
     ajustarVista();
+    setSelectedEvent(null);
     setSelectedGroup(groups[0] ?? null);
   };
 
@@ -177,18 +224,33 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <div className="flex items-center gap-2">
             <h2 className="text-base font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
               <Compass className="w-5 h-5 text-[#EA580C]" />
-              Geolocalización de Grupos de Comunión
+              Geolocalización de Grupos y Encuentros
             </h2>
             <span className="text-xs bg-[#FAFAFA] text-[#6B6B6B] border border-[#E8E8E8] font-medium px-2 py-0.5 rounded">
               {groups.length} Grupos
             </span>
+            {eventosUbicados.length > 0 && (
+              <span className="text-xs bg-[#0A0A0A] text-white font-medium px-2 py-0.5 rounded">
+                {eventosUbicados.length} {eventosUbicados.length === 1 ? 'evento' : 'eventos'}
+              </span>
+            )}
           </div>
           <p className="text-xs text-[#6B6B6B] mt-0.5">
-            Distribución territorial de puntos de reunión, cobertura pastoral y comunidades fraternas.
+            Puntos de reunión de los grupos de comunión y lugar de los próximos encuentros y eventos.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <label className="flex items-center gap-1.5 bg-[#FAFAFA] border border-[#E0E0E0] px-2.5 py-1 rounded-lg text-xs cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showEvents}
+              onChange={(e) => { setShowEvents(e.target.checked); if (!e.target.checked) setSelectedEvent(null); }}
+              className="accent-[#EA580C]"
+            />
+            <CalendarDays className="w-3.5 h-3.5 text-[#EA580C]" />
+            <span className="text-[#0A0A0A] font-medium">Mostrar eventos</span>
+          </label>
           <div className="flex items-center gap-1.5 bg-[#FAFAFA] border border-[#E0E0E0] px-2.5 py-1 rounded-lg text-xs">
             <Navigation className="w-3.5 h-3.5 text-[#EA580C]" />
             <span className="text-[#6B6B6B] text-[11px]">Radio de Cobertura:</span>
@@ -280,7 +342,55 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" />
             <span>Atención Pastoral Requerida (&lt;70%)</span>
           </div>
+          {eventosVisibles.length > 0 && (
+            <div className="flex items-center gap-2 pt-1 border-t border-[#E8E8E8]">
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-[#0A0A0A] border border-[#EA580C]" />
+              <span>Evento programado</span>
+            </div>
+          )}
         </div>
+
+        {selectedEvent && (
+          <div className="absolute bottom-3 right-3 max-w-sm w-80 bg-white border border-[#E0E0E0] rounded-xl shadow-md p-3.5 z-20">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <span className="text-[10px] font-medium text-white bg-[#0A0A0A] px-1.5 py-0.5 rounded">
+                  {NOMBRE_TIPO_EVENTO[selectedEvent.type] ?? selectedEvent.type}
+                </span>
+                <h3 className="text-xs font-serif font-bold text-[#0A0A0A] mt-1 flex items-center gap-1.5">
+                  <CalendarDays className="w-3.5 h-3.5 text-[#EA580C]" />
+                  {selectedEvent.title}
+                </h3>
+              </div>
+              <button onClick={() => setSelectedEvent(null)} className="text-[#8A8A8A] hover:text-[#0A0A0A] p-0.5" aria-label="Cerrar">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-1.5 text-xs text-[#404040]">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-[#8A8A8A] shrink-0" />
+                <span><strong className="text-[#0A0A0A]">{fechaCorta(selectedEvent.date)}</strong> • {selectedEvent.time} hrs</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#8A8A8A] shrink-0" />
+                <span className="truncate">{selectedEvent.location}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#8A8A8A] shrink-0" />
+                <span>Dirigido a: <strong className="text-[#0A0A0A]">{selectedEvent.targetAudience || 'Toda la misión'}</strong></span>
+              </div>
+            </div>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${selectedEvent.lat},${selectedEvent.lng}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 w-full py-1.5 px-2.5 bg-[#FAFAFA] hover:bg-[#F2F2F2] text-[#EA580C] border border-[#E0E0E0] rounded-lg text-xs font-medium flex items-center justify-center gap-1.5"
+            >
+              <span>Cómo llegar</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        )}
 
         {selectedGroup && (
           <div className="absolute bottom-3 right-3 max-w-sm w-80 bg-white border border-[#E0E0E0] rounded-xl shadow-md p-3.5 z-20">

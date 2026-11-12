@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Person, DiscipleshipPhase, UserRole } from '../../types';
 import { api, HistorialFase } from '../../services/api';
-import { NOMBRE_FASE, fechaCorta } from '../../utils/formato';
+import { NOMBRE_FASE, fechaCorta, fechaLarga } from '../../utils/formato';
 import { ROLES, infoRol } from '../../data/roles';
 
 interface PersonDetailModalProps {
@@ -119,7 +119,13 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-[#6B6B6B] mt-0.5">
-                Documento: {person.dni} • {person.age} años ({person.gender === 'M' ? 'Varón' : 'Mujer'}) • {person.groupName}
+                Documento: {person.dni} • {person.groupName}
+              </p>
+              <p className="text-xs text-[#404040] mt-0.5">
+                {person.birthDate
+                  ? <><strong className="text-[#0A0A0A]">{person.age} años</strong> • nació el {fechaLarga(person.birthDate)}</>
+                  : 'Edad no registrada'}
+                {' '}• {person.gender === 'M' ? 'Varón' : 'Mujer'}
               </p>
             </div>
           </div>

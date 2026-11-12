@@ -4,7 +4,24 @@ import { CORREO_VALIDO, ESTADOS_ASISTENCIA } from './calculos';
 import { ErrorNegocio } from './errores';
 import { rolDesdeBase, ROLES } from '../src/data/roles';
 import { hashClave, verificarClave, CLAVE_MINIMA } from './sesion';
+import { edadEn } from './consultas';
 import type { Alcance } from './consultas';
+
+function validarFechaNacimiento(valor: unknown, obligatoria: boolean): string | null {
+  const texto = typeof valor === 'string' ? valor.trim() : '';
+  if (!texto) {
+    if (obligatoria) throw new ErrorNegocio(400, 'Escribe la fecha de nacimiento.');
+    return null;
+  }
+  const fecha = new Date(`${texto}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto) || Number.isNaN(fecha.getTime()) || fecha.toISOString().slice(0, 10) !== texto) {
+    throw new ErrorNegocio(400, 'La fecha de nacimiento no es válida.');
+  }
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (texto > hoy) throw new ErrorNegocio(400, 'La fecha de nacimiento no puede ser futura.');
+  if (edadEn(texto, hoy) > 110) throw new ErrorNegocio(400, 'La fecha de nacimiento no es posible (más de 110 años).');
+  return texto;
+}
 
 export async function registrarPersona(b: any): Promise<number> {
   const nombreCompleto = String(b.fullName ?? '').trim();
@@ -17,7 +34,7 @@ export async function registrarPersona(b: any): Promise<number> {
   }
 
   const { nombres, apellidos } = separarNombre(nombreCompleto);
-  const anioNacimiento = b.age ? new Date().getFullYear() - Number(b.age) : null;
+  const nacimiento = validarFechaNacimiento(b.birthDate, true);
   const fase = FASES.includes(b.phase) ? b.phase : 'contacto';
 
   return withTransaction(async (conn) => {
@@ -30,7 +47,7 @@ export async function registrarPersona(b: any): Promise<number> {
                             telefono, correo, direccion, id_grupo, id_mentor, fase, fecha_ingreso,
                             notas_criticas, autoriza_datos, fecha_autorizacion)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), ?, 1, NOW())`,
-      [siguiente, documento, nombres, apellidos, anioNacimiento ? `${anioNacimiento}-01-01` : null,
+      [siguiente, documento, nombres, apellidos, nacimiento,
        b.gender || null, b.phone || null, b.email || null, b.address || null,
        b.groupId || null, g[0]?.id_lider ?? null, fase, b.criticalNotes || null]);
 
@@ -137,17 +154,16 @@ export async function editarPersona(id: string, b: any): Promise<void> {
   const { nombres, apellidos } = separarNombre(nombreCompleto);
 
   const [[actual]]: any = await pool.query(
-    'SELECT TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) AS edad FROM persona WHERE id_persona = ? AND activo = 1', [id]);
+    'SELECT fecha_nacimiento FROM persona WHERE id_persona = ? AND activo = 1', [id]);
   if (!actual) throw new ErrorNegocio(404, 'La persona no existe.');
 
-  const edadNueva = Number(b.age) || null;
-  const cambiaEdad = edadNueva !== null && edadNueva !== (actual.edad === null ? null : Number(actual.edad));
+  const nacimiento = validarFechaNacimiento(b.birthDate, Boolean(actual.fecha_nacimiento));
   const campos = ['nombres = ?', 'apellidos = ?', 'genero = ?', 'telefono = ?', 'correo = ?', 'direccion = ?', 'id_grupo = ?', 'notas_criticas = ?'];
   const valores: any[] = [nombres, apellidos, b.gender || null, b.phone || null, b.email || null,
     b.address || null, b.groupId || null, b.criticalNotes || null];
-  if (cambiaEdad) {
+  if (nacimiento) {
     campos.push('fecha_nacimiento = ?');
-    valores.push(`${new Date().getFullYear() - edadNueva!}-01-01`);
+    valores.push(nacimiento);
   }
 
   await pool.query(`UPDATE persona SET ${campos.join(', ')} WHERE id_persona = ? AND activo = 1`, [...valores, id]);
@@ -363,11 +379,27 @@ export async function crearEvento(b: any): Promise<number> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.date ?? ''))) throw new ErrorNegocio(400, 'La fecha no es válida.');
   if (!/^\d{2}:\d{2}$/.test(String(b.time ?? ''))) throw new ErrorNegocio(400, 'La hora no es válida.');
 
+  const sinLat = b.lat === undefined || b.lat === null || b.lat === '';
+  const sinLng = b.lng === undefined || b.lng === null || b.lng === '';
+  let lat: number | null = null;
+  let lng: number | null = null;
+  if (sinLat !== sinLng) {
+    throw new ErrorNegocio(400, 'Para ubicar el evento en el mapa se necesitan la latitud y la longitud.');
+  }
+  if (!sinLat) {
+    lat = Number(b.lat);
+    lng = Number(b.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      throw new ErrorNegocio(400, 'La ubicación no es válida (latitud entre -90 y 90, longitud entre -180 y 180).');
+    }
+    lat = Number(lat.toFixed(7));
+    lng = Number(lng.toFixed(7));
+  }
+
   const [r]: any = await pool.query(
-    `INSERT INTO evento (titulo, tipo, fecha, hora, lugar, publico_objetivo, id_grupo, estado)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'programado')`,
-    [titulo, b.type, b.date, b.time, lugar, String(b.targetAudience ?? '').trim().slice(0, 100) || null,
-     b.groupId || null]);
+    `INSERT INTO evento (titulo, tipo, fecha, hora, lugar, publico_objetivo, latitud, longitud, estado)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'programado')`,
+    [titulo, b.type, b.date, b.time, lugar, String(b.targetAudience ?? '').trim().slice(0, 100) || null, lat, lng]);
   return r.insertId;
 }
 

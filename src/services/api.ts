@@ -27,8 +27,19 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
+export interface TramoEdad {
+  personas: number;
+  hombres: number;
+  mujeres: number;
+  registros: number;
+  presentes: number;
+  faltas: number;
+  asistencia: number;
+}
+
 export interface InformeGeneral {
   generado: string;
+  periodo: { desde: string; hasta: string };
   resumen: {
     personasActivas: number;
     gruposActivos: number;
@@ -37,8 +48,13 @@ export interface InformeGeneral {
     personasEnAmarillo: number;
     nuevosUltimos90Dias: number;
     eventosProximos: number;
+    sesionesPeriodo: number;
+    nuevosPeriodo: number;
+    eventosPeriodo: number;
   };
   fases: { orden: number; fase: string; total: number }[];
+  edades: (TramoEdad & { clave: string; etiqueta: string })[];
+  sinFechaNacimiento: TramoEdad;
   grupos: {
     codigo: string; nombre: string; zona: string; distrito: string; lider: string; reunion: string;
     miembros: number; sesiones: number; asistencia: number; rojos: number; amarillos: number;
@@ -70,7 +86,8 @@ export interface DatosEvento {
   time: string;
   location: string;
   targetAudience?: string;
-  groupId?: string;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface DatosAcceso {
@@ -161,7 +178,13 @@ export const api = {
 
   eliminarEvento: (eventId: string) => request(`/api/eventos/${eventId}`, { method: 'DELETE' }),
 
-  informeGeneral: () => request<InformeGeneral>('/api/informe/general'),
+  informeGeneral: (desde?: string, hasta?: string) => {
+    const consulta = new URLSearchParams();
+    if (desde) consulta.set('desde', desde);
+    if (hasta) consulta.set('hasta', hasta);
+    const texto = consulta.toString();
+    return request<InformeGeneral>(`/api/informe/general${texto ? `?${texto}` : ''}`);
+  },
 
   gruposCercanos: (lat: number, lng: number, radioKm = 5) =>
     request<any[]>(`/api/grupos/cercanos?lat=${lat}&lng=${lng}&radio=${radioKm}`),

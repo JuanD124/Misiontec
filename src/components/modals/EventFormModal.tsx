@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { X, CalendarPlus, CheckCircle2, RefreshCw } from 'lucide-react';
-import { MissionaryGroup } from '../../types';
 import { DatosEvento } from '../../services/api';
 import { NOMBRE_TIPO_EVENTO, hoyISO } from '../../utils/formato';
+import { LocationPicker } from '../LocationPicker';
 
 interface EventFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  groups: MissionaryGroup[];
   onSave: (data: DatosEvento) => Promise<void>;
 }
 
@@ -16,14 +15,15 @@ const campo = (conError: boolean) =>
     conError ? 'border-[#DC2626]' : 'border-[#E0E0E0] focus:border-[#EA580C]'
   }`;
 
-export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, groups, onSave }) => {
+export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave }) => {
   const [title, setTitle] = useState('');
   const [type, setType] = useState('taller');
   const [date, setDate] = useState(hoyISO());
   const [time, setTime] = useState('18:00');
   const [location, setLocation] = useState('');
   const [audience, setAudience] = useState('');
-  const [groupId, setGroupId] = useState('');
+  const [lat, setLat] = useState('');
+  const [lng, setLng] = useState('');
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -36,7 +36,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose,
     setTime('18:00');
     setLocation('');
     setAudience('');
-    setGroupId('');
+    setLat('');
+    setLng('');
     setErrores({});
     setErrorGeneral(null);
     setGuardando(false);
@@ -57,7 +58,10 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose,
     setGuardando(true);
     setErrorGeneral(null);
     try {
-      await onSave({ title: title.trim(), type, date, time, location: location.trim(), targetAudience: audience.trim(), groupId });
+      await onSave({
+        title: title.trim(), type, date, time, location: location.trim(), targetAudience: audience.trim(),
+        lat: lat ? Number(lat) : null, lng: lng ? Number(lng) : null,
+      });
       onClose();
     } catch (err) {
       setErrorGeneral((err as Error).message);
@@ -93,20 +97,11 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose,
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
+            <div className="sm:col-span-2">
               <label className="block font-medium text-[#0A0A0A] mb-1">Tipo *</label>
               <select value={type} onChange={(e) => setType(e.target.value)} className={campo(false)}>
                 {Object.entries(NOMBRE_TIPO_EVENTO).map(([clave, nombre]) => (
                   <option key={clave} value={clave}>{nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block font-medium text-[#0A0A0A] mb-1">Grupo (opcional)</label>
-              <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className={campo(false)}>
-                <option value="">Toda la misión</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
               </select>
             </div>
@@ -132,6 +127,15 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose,
             <label className="block font-medium text-[#0A0A0A] mb-1">A quién va dirigido</label>
             <input type="text" value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="Ej. Discipuladores" className={campo(false)} />
           </div>
+
+          <LocationPicker
+            lat={lat}
+            lng={lng}
+            onChange={(la, lo) => { setLat(la); setLng(lo); }}
+            consulta={location}
+            etiqueta="Ubicación en el mapa (opcional)"
+            ayuda="Si marcas el punto, el evento aparecerá en el mapa de la misión. Toca el mapa o arrastra el punto para ajustarlo."
+          />
 
           <div className="pt-4 border-t border-[#E8E8E8] flex items-center justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-medium text-[#6B6B6B] hover:text-[#0A0A0A]">Cancelar</button>

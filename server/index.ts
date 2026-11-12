@@ -212,7 +212,9 @@ app.post('/api/eventos/:id/asistencia', requiere('tomarAsistencia'), ruta(async 
   res.json({ ok: true });
 }));
 
-app.get('/api/informe/general', requiere('verReportes'), ruta(async (_req, res) => res.json(await informeGeneral())));
+app.get('/api/informe/general', requiere('verReportes'), ruta(async (req, res) => {
+  res.json(await informeGeneral(req.query.desde, req.query.hasta));
+}));
 
 app.use('/api', (_req: Request, res: Response) => {
   res.status(404).json({ error: 'Ruta no encontrada.' });

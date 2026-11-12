@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, UserPlus, UserCog, Church, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Person, MissionaryGroup, DiscipleshipPhase } from '../../types';
+import { edadDesde, hoyISO } from '../../utils/formato';
 
 interface PersonFormModalProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({ isOpen, onClos
   const [dni, setDni] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [age, setAge] = useState<string>('25');
+  const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'M' | 'F'>('M');
   const [address, setAddress] = useState('');
   const [groupId, setGroupId] = useState('');
@@ -44,7 +45,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({ isOpen, onClos
       setDni(personToEdit.dni);
       setPhone(personToEdit.phone);
       setEmail(personToEdit.email);
-      setAge(String(personToEdit.age || ''));
+      setBirthDate(personToEdit.birthDate ?? '');
       setGender(personToEdit.gender);
       setAddress(personToEdit.address);
       setGroupId(personToEdit.groupId);
@@ -55,7 +56,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({ isOpen, onClos
       setDni('');
       setPhone('');
       setEmail('');
-      setAge('25');
+      setBirthDate('');
       setGender('M');
       setAddress('');
       setGroupId(groups[0]?.id ?? '');
@@ -73,8 +74,14 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({ isOpen, onClos
     if (fullName.trim().split(/\s+/).filter(Boolean).length < 2) e.fullName = 'Escribe el nombre y al menos un apellido.';
     if (!editando && (dni.length < 5 || dni.length > 12)) e.dni = 'El documento debe tener entre 5 y 12 números.';
     if (email && !CORREO_VALIDO.test(email)) e.email = 'El correo no tiene un formato válido.';
-    const edad = Number(age);
-    if (age && (!Number.isInteger(edad) || edad < 5 || edad > 110)) e.age = 'Escribe una edad entre 5 y 110.';
+    const nacimientoObligatorio = !editando || Boolean(personToEdit?.birthDate);
+    if (!birthDate) {
+      if (nacimientoObligatorio) e.birthDate = 'Elige la fecha de nacimiento.';
+    } else if (birthDate > hoyISO()) {
+      e.birthDate = 'La fecha de nacimiento no puede ser futura.';
+    } else if (edadDesde(birthDate) > 110) {
+      e.birthDate = 'La fecha de nacimiento no es posible.';
+    }
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -92,7 +99,7 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({ isOpen, onClos
           ...(editando ? {} : { dni, phase, tags: ['Nuevo Ingreso', 'Bienvenida'] }),
           phone: phone.trim(),
           email: email.trim(),
-          age: Number(age) || 0,
+          birthDate,
           gender,
           address: address.trim(),
           groupId,
@@ -170,9 +177,14 @@ export const PersonFormModal: React.FC<PersonFormModalProps> = ({ isOpen, onClos
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block font-medium text-[#0A0A0A] mb-1">Edad</label>
-                <input type="number" min={5} max={110} value={age} onChange={(e) => setAge(e.target.value)} className={campo(Boolean(errores.age))} />
-                <MensajeError nombre="age" />
+                <label className="block font-medium text-[#0A0A0A] mb-1">
+                  Fecha de nacimiento {!editando || personToEdit?.birthDate ? '*' : ''}
+                </label>
+                <input type="date" max={hoyISO()} value={birthDate} onChange={(e) => setBirthDate(e.target.value)} className={campo(Boolean(errores.birthDate))} />
+                {birthDate && birthDate <= hoyISO() && (
+                  <p className="mt-1 text-[11px] text-[#6B6B6B]">Edad: <strong className="text-[#0A0A0A]">{edadDesde(birthDate)} años</strong></p>
+                )}
+                <MensajeError nombre="birthDate" />
               </div>
               <div>
                 <label className="block font-medium text-[#0A0A0A] mb-1">Género</label>

@@ -177,12 +177,14 @@ CREATE TABLE evento (
   hora              TIME NOT NULL,
   lugar             VARCHAR(150) NOT NULL,
   publico_objetivo  VARCHAR(100) NULL,
-  id_grupo          INT UNSIGNED NULL COMMENT 'NULL = evento general de la misión',
+  latitud           DECIMAL(10,7) NULL,
+  longitud          DECIMAL(10,7) NULL,
   estado            ENUM('programado','en_curso','concluido','cancelado') NOT NULL DEFAULT 'programado',
   activo            TINYINT(1) NOT NULL DEFAULT 1,
-  CONSTRAINT fk_evento_grupo FOREIGN KEY (id_grupo)
-    REFERENCES grupo (id_grupo) ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB COMMENT='Actividades programadas por la misión';
+  CONSTRAINT ck_evento_latitud  CHECK (latitud  IS NULL OR latitud  BETWEEN -90  AND 90),
+  CONSTRAINT ck_evento_longitud CHECK (longitud IS NULL OR longitud BETWEEN -180 AND 180),
+  CONSTRAINT ck_evento_ubicacion CHECK ((latitud IS NULL) = (longitud IS NULL))
+) ENGINE=InnoDB COMMENT='Actividades de la misión, independientes de los grupos; pueden tener ubicación en el mapa';
 
 CREATE TABLE asistencia_evento (
   id_evento       INT UNSIGNED NOT NULL,

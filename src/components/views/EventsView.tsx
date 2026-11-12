@@ -91,11 +91,18 @@ export const EventsView: React.FC<EventsViewProps> = ({ events, onCreateEvent, o
                   <p className="flex items-center gap-2 text-[#6B6B6B]">
                     <MapPin className="w-4 h-4 text-[#8A8A8A] shrink-0" />
                     <span>{evt.location}</span>
+                    {evt.lat !== null && evt.lng !== null ? (
+                      <span className="ml-auto shrink-0 text-[10px] font-medium text-[#166534] bg-[#DCFCE7] border border-[#BBF7D0] px-1.5 py-0.5 rounded">
+                        En el mapa
+                      </span>
+                    ) : (
+                      <span className="ml-auto shrink-0 text-[10px] text-[#8A8A8A]">Sin ubicación en el mapa</span>
+                    )}
                   </p>
                   <p className="flex items-center gap-2 text-[#6B6B6B]">
                     <Users className="w-4 h-4 text-[#8A8A8A] shrink-0" />
                     <span>
-                      Dirigido a: <strong className="text-[#0A0A0A]">{evt.targetAudience || (evt.groupName ? evt.groupName : 'Toda la misión')}</strong>
+                      Dirigido a: <strong className="text-[#0A0A0A]">{evt.targetAudience || 'Toda la misión'}</strong>
                     </span>
                   </p>
                 </div>

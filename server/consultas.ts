@@ -1,4 +1,5 @@
 import { pool } from './db';
+import { ErrorNegocio } from './errores';
 import { puede, rolDesdeBase } from '../src/data/roles';
 import { Sesion } from './sesion';
 import { SEMAFORO, ESTADO_GRUPO } from './mappers';
@@ -32,7 +33,7 @@ export interface GrupoConIndicadores {
 export async function obtenerPersonasConEstado(): Promise<PersonaConEstado[]> {
   const [filas]: any = await pool.query(`
     SELECT p.id_persona, p.codigo, p.nombres, p.apellidos, p.numero_documento, p.telefono, p.correo,
-           TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, CURDATE()) AS edad, p.genero, p.direccion,
+           p.fecha_nacimiento, TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, CURDATE()) AS edad, p.genero, p.direccion,
            d.nombre AS distrito, p.id_grupo, g.nombre AS grupo, p.fase, p.id_mentor,
            CONCAT(m.nombres, ' ', m.apellidos) AS mentor, p.notas_criticas, p.fecha_ingreso,
            (p.contrasena_hash IS NOT NULL) AS tiene_acceso,
@@ -120,6 +121,7 @@ export function personasParaPantalla(personas: PersonaConEstado[]) {
     phone: r.telefono ?? '',
     email: r.correo ?? '',
     age: r.edad ?? 0,
+    birthDate: r.fecha_nacimiento ? String(r.fecha_nacimiento).slice(0, 10) : '',
     gender: r.genero ?? 'M',
     address: r.direccion ?? '',
     district: r.distrito ?? '',
@@ -183,9 +185,9 @@ export function alertasParaPantalla(personas: PersonaConEstado[]) {
 export async function obtenerEventos() {
   const [rows]: any = await pool.query(`
     SELECT e.id_evento, e.titulo, e.fecha, TIME_FORMAT(e.hora, '%H:%i') AS hora, e.lugar, e.tipo,
-           e.publico_objetivo, e.estado, e.id_grupo, g.nombre AS grupo,
+           e.publico_objetivo, e.estado, e.latitud, e.longitud,
            (SELECT COUNT(*) FROM asistencia_evento a WHERE a.id_evento = e.id_evento) AS asistentes
-    FROM evento e LEFT JOIN grupo g ON g.id_grupo = e.id_grupo
+    FROM evento e
     WHERE e.activo = 1 ORDER BY e.fecha`);
 
   return rows.map((r: any) => ({
@@ -197,8 +199,8 @@ export async function obtenerEventos() {
     type: r.tipo,
     attendeesCount: Number(r.asistentes),
     targetAudience: r.publico_objetivo ?? '',
-    groupId: r.id_grupo ? String(r.id_grupo) : '',
-    groupName: r.grupo ?? '',
+    lat: r.latitud === null ? null : Number(r.latitud),
+    lng: r.longitud === null ? null : Number(r.longitud),
     status: r.estado === 'cancelado' ? 'concluido' : r.estado,
   }));
 }
@@ -313,10 +315,50 @@ export async function obtenerGruposCercanos(lat: number, lng: number, radioKm: n
     }));
 }
 
-export async function informeGeneral() {
+const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+function fechaIsoValida(texto: string): boolean {
+  if (!FECHA_ISO.test(texto)) return false;
+  const d = new Date(`${texto}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === texto;
+}
+
+export function validarPeriodo(desde?: unknown, hasta?: unknown) {
+  const d = typeof desde === 'string' && desde ? desde : '1900-01-01';
+  const h = typeof hasta === 'string' && hasta ? hasta : '9999-12-31';
+  if (!fechaIsoValida(d) || !fechaIsoValida(h)) {
+    throw new ErrorNegocio(400, 'Las fechas del período no son válidas (usa el formato AAAA-MM-DD).');
+  }
+  if (d > h) throw new ErrorNegocio(400, 'La fecha inicial no puede ser posterior a la final.');
+  return { desde: d, hasta: h };
+}
+
+export function edadEn(nacimiento: string, referencia: string): number {
+  const [an, mn, dn] = nacimiento.slice(0, 10).split('-').map(Number);
+  const [ar, mr, dr] = referencia.slice(0, 10).split('-').map(Number);
+  let edad = ar - an;
+  if (mr < mn || (mr === mn && dr < dn)) edad -= 1;
+  return edad;
+}
+
+const TRAMOS_EDAD = [
+  { clave: 'ninos', etiqueta: 'Niños (0 a 12 años)', min: 0, max: 12 },
+  { clave: 'adolescentes', etiqueta: 'Adolescentes (13 a 17)', min: 13, max: 17 },
+  { clave: 'jovenes', etiqueta: 'Jóvenes (18 a 25)', min: 18, max: 25 },
+  { clave: 'adultos_jovenes', etiqueta: 'Adultos jóvenes (26 a 35)', min: 26, max: 35 },
+  { clave: 'adultos', etiqueta: 'Adultos (36 a 50)', min: 36, max: 50 },
+  { clave: 'mayores', etiqueta: 'Mayores (51 años o más)', min: 51, max: 200 },
+];
+
+const porcentaje = (parte: number, total: number) => (total > 0 ? Math.round((1000 * parte) / total) / 10 : 0);
+
+export async function informeGeneral(desdeEntrada?: unknown, hastaEntrada?: unknown) {
+  const { desde, hasta } = validarPeriodo(desdeEntrada, hastaEntrada);
   const personas = await obtenerPersonasConEstado();
   const grupos = await obtenerGruposConIndicadores(personas);
   const resumen = await calcularResumen(personas, grupos);
+  const [[{ hoy }]]: any = await pool.query('SELECT CURDATE() AS hoy');
+  const referencia: string = hasta < hoy ? hasta : hoy;
 
   const nombresFases = ['contacto', 'consolidacion', 'formacion', 'liderazgo'];
   const fases = nombresFases.map((fase, i) => ({
@@ -342,6 +384,18 @@ export async function informeGeneral() {
       semaforo: p.semaforo,
     }));
 
+  const [asistenciaGrupos]: any = await pool.query(`
+    SELECT s.id_grupo, COUNT(DISTINCT s.id_sesion) AS sesiones,
+           COALESCE(SUM(d.estado = 'presente'), 0) AS presentes, COUNT(d.id_persona) AS registros
+    FROM sesion_asistencia s
+    LEFT JOIN detalle_asistencia d ON d.id_sesion = s.id_sesion
+    WHERE s.fecha BETWEEN ? AND ?
+    GROUP BY s.id_grupo`, [desde, hasta]);
+  const porGrupo = new Map<number, any>(asistenciaGrupos.map((a: any) => [a.id_grupo, a]));
+  const totalPresentes = asistenciaGrupos.reduce((s: number, a: any) => s + Number(a.presentes), 0);
+  const totalRegistros = asistenciaGrupos.reduce((s: number, a: any) => s + Number(a.registros), 0);
+  const totalSesiones = asistenciaGrupos.reduce((s: number, a: any) => s + Number(a.sesiones), 0);
+
   const [sesiones]: any = await pool.query(`
     SELECT s.fecha, g.codigo, g.nombre AS grupo, s.tema,
            COALESCE(SUM(d.estado = 'presente'), 0) AS presentes,
@@ -350,13 +404,14 @@ export async function informeGeneral() {
     FROM sesion_asistencia s
     JOIN grupo g ON g.id_grupo = s.id_grupo
     LEFT JOIN detalle_asistencia d ON d.id_sesion = s.id_sesion
+    WHERE s.fecha BETWEEN ? AND ?
     GROUP BY s.id_sesion, g.id_grupo
     ORDER BY s.fecha DESC, g.id_grupo
-    LIMIT 24`);
+    LIMIT 200`, [desde, hasta]);
   const [eventos]: any = await pool.query(`
     SELECT e.titulo, e.tipo, e.fecha, TIME_FORMAT(e.hora, '%H:%i') AS hora, e.lugar, e.estado,
            (SELECT COUNT(*) FROM asistencia_evento a WHERE a.id_evento = e.id_evento) AS asistentes
-    FROM evento e WHERE e.activo = 1 ORDER BY e.fecha DESC`);
+    FROM evento e WHERE e.activo = 1 AND e.fecha BETWEEN ? AND ? ORDER BY e.fecha DESC`, [desde, hasta]);
   const [roles]: any = await pool.query(`
     SELECT r.nombre AS rol, r.nivel_jerarquia AS nivel, COUNT(p.id_persona) AS personas
     FROM rol r
@@ -367,21 +422,67 @@ export async function informeGeneral() {
   const [nuevos]: any = await pool.query(`
     SELECT p.codigo, CONCAT(p.nombres, ' ', p.apellidos) AS nombre, g.nombre AS grupo, p.fase, p.fecha_ingreso
     FROM persona p LEFT JOIN grupo g ON g.id_grupo = p.id_grupo
-    WHERE p.activo = 1 AND p.fecha_ingreso >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
-    ORDER BY p.fecha_ingreso DESC, p.id_persona DESC`);
+    WHERE p.activo = 1 AND p.fecha_ingreso BETWEEN ? AND ?
+    ORDER BY p.fecha_ingreso DESC, p.id_persona DESC`, [desde, hasta]);
+
+  const [personasEdad]: any = await pool.query(
+    'SELECT id_persona, fecha_nacimiento, genero FROM persona WHERE activo = 1 AND fecha_ingreso <= ?', [hasta]);
+  const [asistenciaPersonas]: any = await pool.query(`
+    SELECT d.id_persona, COALESCE(SUM(d.estado = 'presente'), 0) AS presentes,
+           COALESCE(SUM(d.estado <> 'presente'), 0) AS faltas, COUNT(*) AS registros
+    FROM detalle_asistencia d
+    JOIN sesion_asistencia s ON s.id_sesion = d.id_sesion
+    WHERE s.fecha BETWEEN ? AND ?
+    GROUP BY d.id_persona`, [desde, hasta]);
+  const asistenciaDe = new Map<number, any>(asistenciaPersonas.map((a: any) => [a.id_persona, a]));
+
+  const vacio = () => ({ personas: 0, hombres: 0, mujeres: 0, registros: 0, presentes: 0, faltas: 0 });
+  const acumulados = new Map<string, ReturnType<typeof vacio>>(TRAMOS_EDAD.map((t) => [t.clave, vacio()]));
+  const sinFecha = vacio();
+  for (const p of personasEdad) {
+    const edad = p.fecha_nacimiento ? edadEn(String(p.fecha_nacimiento), referencia) : null;
+    const tramo = edad === null || edad < 0 ? null : TRAMOS_EDAD.find((t) => edad >= t.min && edad <= t.max);
+    const acum = tramo ? acumulados.get(tramo.clave)! : sinFecha;
+    const a = asistenciaDe.get(p.id_persona);
+    acum.personas += 1;
+    if (p.genero === 'M') acum.hombres += 1;
+    if (p.genero === 'F') acum.mujeres += 1;
+    if (a) {
+      acum.registros += Number(a.registros);
+      acum.presentes += Number(a.presentes);
+      acum.faltas += Number(a.faltas);
+    }
+  }
+  const conPorcentaje = (a: ReturnType<typeof vacio>) => ({ ...a, asistencia: porcentaje(a.presentes, a.registros) });
+  const edades = TRAMOS_EDAD.map((t) => ({ clave: t.clave, etiqueta: t.etiqueta, ...conPorcentaje(acumulados.get(t.clave)!) }));
+
   const [[{ generado }]]: any = await pool.query('SELECT NOW() AS generado');
 
   return {
     generado,
-    resumen: { ...resumen, asistenciaPromedio: resumen.asistenciaPromedio ?? 0 },
+    periodo: { desde, hasta },
+    resumen: {
+      ...resumen,
+      asistenciaPromedio: porcentaje(totalPresentes, totalRegistros),
+      sesionesPeriodo: totalSesiones,
+      nuevosPeriodo: nuevos.length,
+      eventosPeriodo: eventos.length,
+    },
     fases,
-    grupos: grupos.map((g) => ({
-      codigo: g.fila.codigo, nombre: g.fila.nombre, zona: g.fila.zona, distrito: g.fila.distrito,
-      lider: g.fila.lider ?? 'Sin líder',
-      reunion: `${g.fila.dia_reunion} ${g.fila.hora}`,
-      miembros: g.miembros, sesiones: g.sesiones, asistencia: g.asistencia ?? 0,
-      rojos: g.rojos, amarillos: g.amarillos,
-    })),
+    edades,
+    sinFechaNacimiento: conPorcentaje(sinFecha),
+    grupos: grupos.map((g) => {
+      const a = porGrupo.get(g.fila.id_grupo);
+      return {
+        codigo: g.fila.codigo, nombre: g.fila.nombre, zona: g.fila.zona, distrito: g.fila.distrito,
+        lider: g.fila.lider ?? 'Sin líder',
+        reunion: `${g.fila.dia_reunion} ${g.fila.hora}`,
+        miembros: g.miembros,
+        sesiones: a ? Number(a.sesiones) : 0,
+        asistencia: a ? porcentaje(Number(a.presentes), Number(a.registros)) : 0,
+        rojos: g.rojos, amarillos: g.amarillos,
+      };
+    }),
     cuidado,
     sesiones: sesiones.map((s: any) => ({
       fecha: s.fecha, codigo: s.codigo, grupo: s.grupo, tema: s.tema ?? '',

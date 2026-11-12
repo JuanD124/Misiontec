@@ -85,10 +85,10 @@ JOIN persona p ON p.id_persona = d.id_persona
 SET d.estado = 'falta_justificada', d.observacion = 'Cita médica'
 WHERE p.codigo = 'MT-0012' AND s.fecha = '2026-10-30';
 
-INSERT INTO evento (titulo, tipo, fecha, hora, lugar, publico_objetivo, id_grupo, estado) VALUES
- ('Culto general de la misión', 'culto',  '2026-11-01', '09:00', 'Auditorio principal',  'Toda la misión',  NULL, 'concluido'),
- ('Taller de adiestramiento',   'taller', '2026-11-21', '15:00', 'Salón Barzal',         'Discipuladores',  NULL, 'programado'),
- ('Vigilia de oración',         'vigilia','2026-11-28', '21:00', 'Auditorio principal',  'Toda la misión',  NULL, 'programado');
+INSERT INTO evento (titulo, tipo, fecha, hora, lugar, publico_objetivo, latitud, longitud, estado) VALUES
+ ('Culto general de la misión', 'culto',  '2026-11-01', '09:00', 'Auditorio principal',  'Toda la misión',  4.1432000, -73.6268000, 'concluido'),
+ ('Taller de adiestramiento',   'taller', '2026-11-21', '15:00', 'Salón Barzal',         'Discipuladores',  4.1498000, -73.6341000, 'programado'),
+ ('Vigilia de oración',         'vigilia','2026-11-28', '21:00', 'Auditorio principal',  'Toda la misión',  4.1432000, -73.6268000, 'programado');
 
 INSERT INTO asistencia_evento (id_evento, id_persona)
 SELECT e.id_evento, p.id_persona FROM evento e JOIN persona p

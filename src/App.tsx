@@ -14,6 +14,8 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LoginScreen } from './components/LoginScreen';
 import { StatsCards } from './components/StatsCards';
+import { GroupsCard } from './components/GroupsCard';
+import { UpcomingEventsCard } from './components/UpcomingEventsCard';
 import { TrafficLightTable } from './components/TrafficLightTable';
 import { InteractiveMap } from './components/InteractiveMap';
 import { DiscipleshipFunnel } from './components/DiscipleshipFunnel';
@@ -491,6 +493,13 @@ export default function App() {
                 />
               )}
 
+              {(can('verGrupos') || can('verEventos')) && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {can('verGrupos') && <GroupsCard groups={filteredGroups} onVerGrupos={() => selectView('grupos')} />}
+                  {can('verEventos') && <UpcomingEventsCard events={events} onVerEventos={() => selectView('eventos')} />}
+                </div>
+              )}
+
               {can('verCuidado') && (
                 <div id="dashboard-traffic-light-section">
                   <TrafficLightTable
@@ -506,6 +515,7 @@ export default function App() {
                 <div>
                   <InteractiveMap
                     groups={filteredGroups}
+                    events={can('verEventos') ? events : []}
                     onQuickAttendanceForGroup={can('tomarAsistencia') ? () => {
                       const el = document.getElementById('dashboard-attendance-section');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -552,6 +562,7 @@ export default function App() {
               <GroupsView
                 groups={filteredGroups}
                 people={filteredPeople}
+                events={can('verEventos') ? events : []}
                 onTakeAttendanceForGroup={can('tomarAsistencia') ? () => selectView('asistencia') : undefined}
                 onCreateGroup={can('gestionarGrupos') ? () => setGroupForm({ abierto: true, grupo: null }) : undefined}
                 onEditGroup={can('gestionarGrupos') ? (g) => setGroupForm({ abierto: true, grupo: g }) : undefined}
@@ -679,7 +690,6 @@ export default function App() {
       <EventFormModal
         isOpen={isEventFormOpen}
         onClose={() => setIsEventFormOpen(false)}
-        groups={groups}
         onSave={handleCreateEvent}
       />
 

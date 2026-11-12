@@ -9,12 +9,13 @@ import {
   Pencil,
   Trash2
 } from 'lucide-react';
-import { MissionaryGroup, Person } from '../../types';
+import { MissionaryGroup, MissionEvent, Person } from '../../types';
 import { InteractiveMap } from '../InteractiveMap';
 
 interface GroupsViewProps {
   groups: MissionaryGroup[];
   people: Person[];
+  events?: MissionEvent[];
   onTakeAttendanceForGroup?: (groupId: string) => void;
   onCreateGroup?: () => void;
   onEditGroup?: (group: MissionaryGroup) => void;
@@ -24,6 +25,7 @@ interface GroupsViewProps {
 export const GroupsView: React.FC<GroupsViewProps> = ({
   groups,
   people,
+  events,
   onTakeAttendanceForGroup,
   onCreateGroup,
   onEditGroup,
@@ -74,6 +76,7 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
 
       <InteractiveMap
         groups={groups}
+        events={events}
         onSelectGroup={(g) => setSelectedGroup(g)}
         onQuickAttendanceForGroup={onTakeAttendanceForGroup}
       />

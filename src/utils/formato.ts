@@ -20,9 +20,37 @@ export const NOMBRE_ESTADO_EVENTO: Record<string, string> = {
   cancelado: 'Cancelado',
 };
 
+export const MESES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+
 export const fechaCorta = (fecha: string) => {
   const [anio, mes, dia] = fecha.slice(0, 10).split('-');
   return `${dia}/${mes}/${anio}`;
 };
 
-export const hoyISO = () => new Date().toISOString().slice(0, 10);
+export const fechaLarga = (fecha: string) => {
+  const [anio, mes, dia] = fecha.slice(0, 10).split('-');
+  return `${Number(dia)} de ${MESES[Number(mes) - 1]} de ${anio}`;
+};
+
+export const aISO = (fecha: Date) =>
+  `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+
+export const deISO = (texto: string) => {
+  const [anio, mes, dia] = texto.slice(0, 10).split('-').map(Number);
+  return new Date(anio, mes - 1, dia);
+};
+
+export const hoyISO = () => aISO(new Date());
+
+export const edadDesde = (nacimiento: string, referencia: Date = new Date()) => {
+  const nac = deISO(nacimiento);
+  let edad = referencia.getFullYear() - nac.getFullYear();
+  const cumplio =
+    referencia.getMonth() > nac.getMonth() ||
+    (referencia.getMonth() === nac.getMonth() && referencia.getDate() >= nac.getDate());
+  if (!cumplio) edad -= 1;
+  return edad;
+};

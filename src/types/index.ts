@@ -16,6 +16,7 @@ export interface Person {
   phone: string;
   email: string;
   age: number;
+  birthDate: string;
   gender: 'M' | 'F';
   address: string;
   district: string;
@@ -94,9 +95,9 @@ export interface MissionEvent {
   type: 'culto' | 'taller' | 'retiro' | 'vigilia' | 'evangelismo';
   attendeesCount: number;
   targetAudience: string;
+  lat: number | null;
+  lng: number | null;
   status: 'programado' | 'en_curso' | 'concluido';
-  groupId?: string;
-  groupName?: string;
 }
 
 export interface SesionUsuario {
