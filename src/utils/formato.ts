@@ -45,6 +45,10 @@ export const deISO = (texto: string) => {
 
 export const hoyISO = () => aISO(new Date());
 
+/** Edad lista para mostrar junto al nombre (solo si se registró la fecha de nacimiento). */
+export const textoEdad = (p: { age: number; birthDate: string }) =>
+  p.birthDate ? `${p.age} ${p.age === 1 ? 'año' : 'años'}` : 'Edad no registrada';
+
 export const edadDesde = (nacimiento: string, referencia: Date = new Date()) => {
   const nac = deISO(nacimiento);
   let edad = referencia.getFullYear() - nac.getFullYear();

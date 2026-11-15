@@ -8,19 +8,39 @@ import {
   Save, 
   Users, 
   CheckCheck,
-  Sparkles
+  Sparkles,
+  Info,
+  RefreshCw
 } from 'lucide-react';
 import { MissionaryGroup, Person } from '../types';
+import { api } from '../services/api';
+import { aISO, deISO, hoyISO, fechaLarga, textoEdad } from '../utils/formato';
+
+type EstadoAsistencia = 'presente' | 'falta_justificada' | 'falta_injustificada';
+
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+const nombreDia = (iso: string) => DIAS_SEMANA[deISO(iso).getDay()];
+
+/** Fecha de la reunión más reciente (hoy o antes) según el día en que se reúne el grupo. */
+const ultimaReunion = (diaReunion: string | undefined): string => {
+  const hoy = new Date();
+  const objetivo = DIAS_SEMANA.findIndex((d) => d.toLowerCase() === (diaReunion ?? '').toLowerCase());
+  if (objetivo < 0) return aISO(hoy);
+  const atras = (hoy.getDay() - objetivo + 7) % 7;
+  return aISO(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - atras));
+};
 
 interface QuickAttendanceProps {
   groups: MissionaryGroup[];
   people: Person[];
   selectedGroupId?: string;
+  /** Devuelve true si se guardó; false si hubo un error (la pantalla principal ya avisa cuál). */
   onSaveAttendance: (
-    groupId: string, 
-    date: string, 
-    attendanceMap: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>
-  ) => void;
+    groupId: string,
+    date: string,
+    attendanceMap: Record<string, EstadoAsistencia>
+  ) => Promise<boolean>;
 }
 
 export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
@@ -30,11 +50,17 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
   onSaveAttendance
 }) => {
   const [currentGroupId, setCurrentGroupId] = useState<string>(initialGroupId || groups[0]?.id || '');
-  const [meetingDate, setMeetingDate] = useState<string>('2026-09-15');
-  const [attendanceState, setAttendanceState] = useState<Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>>({});
+  const grupoInicial = groups.find((g) => g.id === (initialGroupId || groups[0]?.id));
+  const [meetingDate, setMeetingDate] = useState<string>(() => ultimaReunion(grupoInicial?.meetingDay));
+  const [attendanceState, setAttendanceState] = useState<Record<string, EstadoAsistencia>>({});
   const [isSavedRecently, setIsSavedRecently] = useState(false);
+  const [yaRegistrada, setYaRegistrada] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [guardando, setGuardando] = useState(false);
 
   const groupMembers = people.filter(p => p.groupId === currentGroupId);
+  const selectedGroup = groups.find(g => g.id === currentGroupId);
+  const hoy = hoyISO();
 
   useEffect(() => {
     if (initialGroupId) {
@@ -42,15 +68,36 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
     }
   }, [initialGroupId]);
 
-  useEffect(() => {
-    const initialState: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'> = {};
-    groupMembers.forEach(m => {
-      initialState[m.id] = m.consecutiveAbsences > 0 ? 'falta_injustificada' : 'presente';
-    });
-    setAttendanceState(initialState);
-  }, [currentGroupId, people]);
+  const elegirGrupo = (id: string) => {
+    setCurrentGroupId(id);
+    setMeetingDate(ultimaReunion(groups.find((g) => g.id === id)?.meetingDay));
+  };
 
-  const handleStatusChange = (personId: string, status: 'presente' | 'falta_justificada' | 'falta_injustificada') => {
+  // Cada vez que cambia el grupo, la fecha o los discípulos: se parte de los valores por defecto
+  // y, si ya hay asistencia guardada para ese día, se muestra lo registrado.
+  useEffect(() => {
+    let vigente = true;
+    const porDefecto: Record<string, EstadoAsistencia> = {};
+    groupMembers.forEach(m => {
+      porDefecto[m.id] = 'presente';
+    });
+    setAttendanceState(porDefecto);
+    setYaRegistrada(false);
+
+    if (!currentGroupId || !meetingDate || meetingDate > hoy) return;
+    setCargando(true);
+    api.asistenciaDeSesion(currentGroupId, meetingDate)
+      .then((previa) => {
+        if (!vigente) return;
+        setYaRegistrada(previa.registrada);
+        if (previa.registrada) setAttendanceState({ ...porDefecto, ...previa.items });
+      })
+      .catch(() => undefined)
+      .finally(() => { if (vigente) setCargando(false); });
+    return () => { vigente = false; };
+  }, [currentGroupId, meetingDate, people]);
+
+  const handleStatusChange = (personId: string, status: EstadoAsistencia) => {
     setAttendanceState(prev => ({
       ...prev,
       [personId]: status
@@ -58,17 +105,25 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
   };
 
   const markAllPresent = () => {
-    const next: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'> = {};
+    const next: Record<string, EstadoAsistencia> = {};
     groupMembers.forEach(m => {
       next[m.id] = 'presente';
     });
     setAttendanceState(next);
   };
 
-  const handleSave = () => {
-    onSaveAttendance(currentGroupId, meetingDate, attendanceState);
-    setIsSavedRecently(true);
-    setTimeout(() => setIsSavedRecently(false), 3000);
+  const fechaValida = Boolean(meetingDate) && meetingDate <= hoy;
+
+  const handleSave = async () => {
+    if (!fechaValida || guardando || groupMembers.length === 0) return;
+    setGuardando(true);
+    const guardado = await onSaveAttendance(currentGroupId, meetingDate, attendanceState);
+    setGuardando(false);
+    if (guardado) {
+      setYaRegistrada(true);
+      setIsSavedRecently(true);
+      setTimeout(() => setIsSavedRecently(false), 3000);
+    }
   };
 
   const presentCount = Object.values(attendanceState).filter(s => s === 'presente').length;
@@ -77,7 +132,7 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
   const totalCount = groupMembers.length || 1;
   const attendanceRate = Math.round((presentCount / totalCount) * 100);
 
-  const selectedGroup = groups.find(g => g.id === currentGroupId);
+  const otroDia = fechaValida && selectedGroup && nombreDia(meetingDate).toLowerCase() !== selectedGroup.meetingDay.toLowerCase();
 
   return (
     <div className="bg-white border border-[#E8E8E8] rounded-xl shadow-xs overflow-hidden">
@@ -102,7 +157,7 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
             <Users className="w-3.5 h-3.5 text-[#EA580C]" />
             <select
               value={currentGroupId}
-              onChange={(e) => setCurrentGroupId(e.target.value)}
+              onChange={(e) => elegirGrupo(e.target.value)}
               className="bg-transparent font-medium text-[#0A0A0A] focus:outline-none text-xs cursor-pointer"
             >
               {groups.map((grp) => (
@@ -118,11 +173,32 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
             <input
               type="date"
               value={meetingDate}
+              max={hoy}
               onChange={(e) => setMeetingDate(e.target.value)}
               className="bg-transparent text-xs font-medium text-[#0A0A0A] focus:outline-none cursor-pointer"
             />
           </div>
         </div>
+      </div>
+
+      <div className="px-4.5 py-2 border-b border-[#E8E8E8] text-[11px] space-y-1">
+        <p className="text-[#404040]">
+          {fechaValida
+            ? <>Reunión del <strong className="text-[#0A0A0A]">{nombreDia(meetingDate)} {fechaLarga(meetingDate)}</strong></>
+            : <span className="text-[#B91C1C] font-medium">Elige una fecha que no sea futura.</span>}
+          {cargando && <RefreshCw className="inline w-3 h-3 ml-2 animate-spin text-[#8A8A8A]" />}
+        </p>
+        {otroDia && (
+          <p className="text-[#854D0E] bg-[#FEF9C3] border border-[#FEF08A] rounded-md px-2 py-1">
+            Este grupo se reúne los {selectedGroup!.meetingDay.toLowerCase().replace(/([^s])$/, '$1s')} y elegiste un {nombreDia(meetingDate).toLowerCase()}. Verifica que la fecha sea correcta.
+          </p>
+        )}
+        {yaRegistrada && (
+          <p className="text-[#1E40AF] bg-[#EFF6FF] border border-[#BFDBFE] rounded-md px-2 py-1 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 shrink-0" />
+            Ya hay asistencia guardada para este día. Estás viendo lo registrado; si guardas, se reemplaza.
+          </p>
+        )}
       </div>
 
       <div className="px-4.5 py-2.5 bg-[#FAFAFA] border-b border-[#E8E8E8] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -186,7 +262,7 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
                         </div>
                         <div>
                           <p className="font-medium text-[#0A0A0A]">{member.fullName}</p>
-                          <p className="text-[10px] text-[#6B6B6B]">Doc.: {member.dni}</p>
+                          <p className="text-[10px] text-[#6B6B6B]">Doc.: {member.dni} • {textoEdad(member)}</p>
                         </div>
                       </div>
                     </td>
@@ -274,10 +350,11 @@ export const QuickAttendance: React.FC<QuickAttendanceProps> = ({
         <button
           id="btn-save-attendance"
           onClick={handleSave}
-          className="flex items-center gap-2 px-4 py-2 bg-[#EA580C] hover:bg-[#C2410C] text-[#FAFAFA] text-xs font-medium rounded-lg shadow-xs transition-colors cursor-pointer"
+          disabled={!fechaValida || guardando || groupMembers.length === 0}
+          className="flex items-center gap-2 px-4 py-2 bg-[#EA580C] hover:bg-[#C2410C] disabled:opacity-50 disabled:cursor-not-allowed text-[#FAFAFA] text-xs font-medium rounded-lg shadow-xs transition-colors cursor-pointer"
         >
-          <Save className="w-4 h-4" />
-          <span>Guardar Asistencia</span>
+          {guardando ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <span>{guardando ? 'Guardando…' : yaRegistrada ? 'Actualizar Asistencia' : 'Guardar Asistencia'}</span>
         </button>
       </div>
     </div>

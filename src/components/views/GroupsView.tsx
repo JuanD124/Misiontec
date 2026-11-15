@@ -105,11 +105,13 @@ export const GroupsView: React.FC<GroupsViewProps> = ({
                 </div>
 
                 <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                  grp.averageAttendanceRate >= 85
-                    ? 'bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]'
-                    : 'bg-[#FEF9C3] text-[#854D0E] border border-[#FEF08A]'
+                  grp.meetingsCount === 0
+                    ? 'bg-[#F5F5F5] text-[#6B6B6B] border border-[#E0E0E0]'
+                    : grp.averageAttendanceRate >= 85
+                      ? 'bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]'
+                      : 'bg-[#FEF9C3] text-[#854D0E] border border-[#FEF08A]'
                 }`}>
-                  {grp.averageAttendanceRate}% perseverancia
+                  {grp.meetingsCount === 0 ? 'Sin reuniones recientes' : `${grp.averageAttendanceRate}% perseverancia`}
                 </span>
               </div>
 

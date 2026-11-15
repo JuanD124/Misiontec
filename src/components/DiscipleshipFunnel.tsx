@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { textoEdad } from '../utils/formato';
 import { 
   BookOpen, 
   ArrowRight, 
@@ -170,7 +171,7 @@ export const DiscipleshipFunnel: React.FC<DiscipleshipFunnelProps> = ({
                         >
                           {member.fullName}
                         </button>
-                        <p className="text-[10px] text-[#6B6B6B]">{member.groupName}</p>
+                        <p className="text-[10px] text-[#6B6B6B]">{member.groupName} • {textoEdad(member)}</p>
                       </div>
                     </div>
 

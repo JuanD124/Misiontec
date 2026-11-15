@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Printer, RefreshCw, ClipboardList, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
+import { Printer, RefreshCw, ClipboardList, ChevronLeft, ChevronRight, CalendarRange, ListChecks } from 'lucide-react';
 import { api, InformeGeneral } from '../services/api';
 import { NOMBRE_FASE, NOMBRE_ESTADO_EVENTO, MESES, fechaCorta, fechaLarga, hoyISO, aISO } from '../utils/formato';
 import { ModoPeriodo, periodoDe, moverAncla, rangoValido } from '../utils/periodo';
@@ -19,13 +19,29 @@ const MODOS: { clave: ModoPeriodo; etiqueta: string }[] = [
   { clave: 'rango', etiqueta: 'Rango de fechas' },
 ];
 
+type ClaveSeccion = 'resumen' | 'fases' | 'edades' | 'grupos' | 'cuidado' | 'asistencia' | 'eventos' | 'equipo' | 'nuevos';
+
+const SECCIONES: { clave: ClaveSeccion; corto: string; titulo: string; informe: string }[] = [
+  { clave: 'resumen', corto: 'Resumen', titulo: 'Resumen general', informe: 'Resumen general' },
+  { clave: 'fases', corto: 'Fases de formación', titulo: 'Discípulos por fase de formación', informe: 'Discípulos por fase de formación' },
+  { clave: 'edades', corto: 'Edades', titulo: 'Discípulos por edad', informe: 'Discípulos por edad' },
+  { clave: 'grupos', corto: 'Grupos de comunión', titulo: 'Grupos de comunión', informe: 'Grupos de comunión' },
+  { clave: 'cuidado', corto: 'Acompañamiento', titulo: 'Discípulos que requieren acompañamiento (estado actual)', informe: 'Acompañamiento y cuidado pastoral' },
+  { clave: 'asistencia', corto: 'Asistencia', titulo: 'Asistencia por grupo en el período', informe: 'Asistencia por grupo' },
+  { clave: 'eventos', corto: 'Eventos', titulo: 'Eventos del período', informe: 'Eventos' },
+  { clave: 'equipo', corto: 'Equipo pastoral', titulo: 'Equipo por rol', informe: 'Equipo pastoral' },
+  { clave: 'nuevos', corto: 'Nuevos discípulos', titulo: 'Nuevos discípulos del período', informe: 'Nuevos discípulos' },
+];
+
 const campoFecha =
   'px-2.5 py-1.5 bg-white border border-[#E0E0E0] rounded-lg text-xs text-[#0A0A0A] focus:outline-none focus:border-[#EA580C]';
 
-const Seccion: React.FC<{ numero: number; titulo: string; children: React.ReactNode }> = ({ numero, titulo, children }) => (
+const Seccion: React.FC<{ numero?: number; titulo: string; children: React.ReactNode }> = ({ numero, titulo, children }) => (
   <section className="print-avoid-break">
     <h2 className="text-sm font-bold text-[#0A0A0A] mb-2 flex items-center gap-2">
-      <span className="w-5 h-5 rounded-md bg-[#EA580C] text-white text-[11px] flex items-center justify-center">{numero}</span>
+      {numero !== undefined && (
+        <span className="w-5 h-5 rounded-md bg-[#EA580C] text-white text-[11px] flex items-center justify-center">{numero}</span>
+      )}
       {titulo}
     </h2>
     {children}
@@ -73,6 +89,8 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
     return { desde: aISO(new Date(hoy.getFullYear(), hoy.getMonth(), 1)), hasta: aISO(hoy) };
   });
 
+  const [elegidas, setElegidas] = useState<ClaveSeccion[]>([]);
+
   const periodo = useMemo(() => periodoDe(modo, ancla, rango), [modo, ancla, rango]);
   const periodoListo = modo !== 'rango' || rangoValido(rango);
   const ultimaPeticion = useRef(0);
@@ -97,6 +115,55 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
   useEffect(() => {
     cargar();
   }, [periodo.desde, periodo.hasta, periodoListo]);
+
+  // Sin ninguna elegida = informe completo.
+  const todas = elegidas.length === 0 || elegidas.length === SECCIONES.length;
+  const ver = (clave: ClaveSeccion) => todas || elegidas.includes(clave);
+  const visibles = SECCIONES.filter((x) => ver(x.clave));
+  const numeroDe = (clave: ClaveSeccion): number | undefined =>
+    visibles.length > 1 ? visibles.findIndex((x) => x.clave === clave) + 1 : undefined;
+  const alternar = (clave: ClaveSeccion) =>
+    setElegidas((prev) => (prev.includes(clave) ? prev.filter((c) => c !== clave) : [...prev, clave]));
+  const tituloInforme = todas
+    ? 'Informe General de Seguimiento'
+    : visibles.length === 1
+      ? `Informe de ${visibles[0].informe.charAt(0).toLowerCase()}${visibles[0].informe.slice(1)}`
+      : 'Informe de seguimiento (secciones elegidas)';
+
+  const barraSecciones = (
+    <div className="no-print mb-3 p-3 bg-white border border-[#E8E8E8] rounded-xl space-y-2">
+      <p className="text-xs font-semibold text-[#0A0A0A] flex items-center gap-1.5">
+        <ListChecks className="w-4 h-4 text-[#EA580C]" />
+        Qué información generar
+        <span className="font-normal text-[#6B6B6B]">— elige una o varias partes, o el informe completo</span>
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          onClick={() => setElegidas([])}
+          className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+            todas ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]' : 'bg-white text-[#404040] border-[#E0E0E0] hover:bg-[#F2F2F2]'
+          }`}
+        >
+          Informe completo
+        </button>
+        {SECCIONES.map((x) => {
+          const activa = elegidas.length > 0 && elegidas.length < SECCIONES.length && elegidas.includes(x.clave);
+          return (
+            <button
+              key={x.clave}
+              onClick={() => alternar(x.clave)}
+              aria-pressed={activa}
+              className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                activa ? 'bg-[#EA580C] text-white border-[#EA580C]' : 'bg-white text-[#404040] border-[#E0E0E0] hover:bg-[#F2F2F2]'
+              }`}
+            >
+              {x.corto}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   const barraPeriodo = (
     <div className="no-print mb-3 p-3 bg-white border border-[#E8E8E8] rounded-xl space-y-3">
@@ -182,7 +249,7 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
   if (cargando && !informe) {
     return (
       <div>
-        {barraPeriodo}
+        {barraPeriodo}{barraSecciones}
         <div className="p-8 text-center text-xs text-[#6B6B6B] bg-white border border-[#E8E8E8] rounded-xl">Generando el informe…</div>
       </div>
     );
@@ -191,7 +258,7 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
   if (error || !informe) {
     return (
       <div>
-        {barraPeriodo}
+        {barraPeriodo}{barraSecciones}
         {periodoListo && (
           <div className="p-6 bg-white border border-[#E8E8E8] rounded-xl text-xs space-y-2">
             <p className="font-semibold text-[#B91C1C]">No se pudo generar el informe</p>
@@ -222,7 +289,7 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
 
   return (
     <div>
-      {barraPeriodo}
+      {barraPeriodo}{barraSecciones}
 
       <div className="no-print flex items-center justify-between gap-3 mb-3">
         <p className="text-xs text-[#6B6B6B] flex items-center gap-1.5">
@@ -251,8 +318,12 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
         <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 pb-4 border-b-2 border-[#EA580C]">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-[#EA580C]">MISIONTEC</p>
-            <h1 className="text-xl font-bold text-[#0A0A0A] mt-0.5">Informe General de Seguimiento</h1>
-            <p className="text-xs text-[#6B6B6B] mt-1">Estado de los grupos de comunión, la asistencia y el acompañamiento de los discípulos.</p>
+            <h1 className="text-xl font-bold text-[#0A0A0A] mt-0.5">{tituloInforme}</h1>
+            <p className="text-xs text-[#6B6B6B] mt-1">
+              {todas
+                ? 'Estado de los grupos de comunión, la asistencia y el acompañamiento de los discípulos.'
+                : `Incluye: ${visibles.map((x) => x.corto.toLowerCase()).join(', ')}.`}
+            </p>
             <p className="text-xs text-[#0A0A0A] mt-1.5">
               <strong>Período:</strong> {periodo.etiqueta} ({fechaCorta(informe.periodo.desde)} a {fechaCorta(informe.periodo.hasta)})
             </p>
@@ -263,136 +334,154 @@ export const GeneralReport: React.FC<GeneralReportProps> = ({ rolActivo }) => {
           </div>
         </header>
 
-        <Seccion numero={1} titulo="Resumen general">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {tarjetas.map((t) => (
-              <div key={t.etiqueta} className="p-3 border border-[#E8E8E8] rounded-lg bg-[#FAFAFA] print-avoid-break">
-                <p className={`text-xl font-bold ${t.color}`}>{t.valor}</p>
-                <p className="text-[10px] text-[#6B6B6B] leading-tight mt-0.5">{t.etiqueta}</p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 text-[10px] text-[#8A8A8A]">
-            La asistencia, las reuniones, los nuevos y los eventos corresponden al período elegido. Discípulos activos, grupos y semáforo muestran el estado actual.
-          </p>
-        </Seccion>
-
-        <Seccion numero={2} titulo="Discípulos por fase de formación">
-          <div className="space-y-1.5">
-            {informe.fases.map((f) => (
-              <div key={f.fase} className="flex items-center gap-3 text-[11px] print-avoid-break">
-                <span className="w-28 text-[#404040] font-medium">{NOMBRE_FASE[f.fase] ?? f.fase}</span>
-                <div className="flex-1 h-3 bg-[#F2F2F2] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#EA580C] rounded-full" style={{ width: `${(f.total / totalFases) * 100}%` }} />
+        {ver('resumen') && (
+          <Seccion numero={numeroDe('resumen')} titulo="Resumen general">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {tarjetas.map((t) => (
+                <div key={t.etiqueta} className="p-3 border border-[#E8E8E8] rounded-lg bg-[#FAFAFA] print-avoid-break">
+                  <p className={`text-xl font-bold ${t.color}`}>{t.valor}</p>
+                  <p className="text-[10px] text-[#6B6B6B] leading-tight mt-0.5">{t.etiqueta}</p>
                 </div>
-                <span className="w-24 text-right text-[#404040]">{f.total} ({Math.round((f.total / totalFases) * 100)}%)</span>
-              </div>
-            ))}
-          </div>
-        </Seccion>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] text-[#8A8A8A]">
+              La asistencia, las reuniones, los nuevos y los eventos corresponden al período elegido. Discípulos activos, grupos y semáforo muestran el estado actual.
+            </p>
+          </Seccion>
+        )}
 
-        <Seccion numero={3} titulo="Discípulos por edad">
-          <p className="text-[10px] text-[#8A8A8A] mb-2">
-            Edades calculadas al {fechaLarga(referenciaEdad)} (a partir de la fecha de nacimiento). Incluye a los discípulos registrados hasta el final del período; la asistencia es la del período.
-          </p>
-          <div className="space-y-1.5 mb-3">
-            {informe.edades.map((e) => (
-              <div key={e.clave} className="flex items-center gap-3 text-[11px] print-avoid-break">
-                <span className="w-44 text-[#404040] font-medium">{e.etiqueta}</span>
-                <div className="flex-1 h-3 bg-[#F2F2F2] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#EA580C] rounded-full" style={{ width: `${totalEdades ? (e.personas / totalEdades) * 100 : 0}%` }} />
+        {ver('fases') && (
+          <Seccion numero={numeroDe('fases')} titulo="Discípulos por fase de formación">
+            <div className="space-y-1.5">
+              {informe.fases.map((f) => (
+                <div key={f.fase} className="flex items-center gap-3 text-[11px] print-avoid-break">
+                  <span className="w-28 text-[#404040] font-medium">{NOMBRE_FASE[f.fase] ?? f.fase}</span>
+                  <div className="flex-1 h-3 bg-[#F2F2F2] rounded-full overflow-hidden">
+                    <div className="h-full bg-[#EA580C] rounded-full" style={{ width: `${(f.total / totalFases) * 100}%` }} />
+                  </div>
+                  <span className="w-24 text-right text-[#404040]">{f.total} ({Math.round((f.total / totalFases) * 100)}%)</span>
                 </div>
-                <span className="w-24 text-right text-[#404040]">{e.personas} ({totalEdades ? Math.round((e.personas / totalEdades) * 100) : 0}%)</span>
-              </div>
-            ))}
-          </div>
-          <Tabla
-            columnas={['Rango de edad', 'Discípulos', 'Hombres', 'Mujeres', 'Asistencia del período', 'Faltas']}
-            filas={[
-              ...informe.edades.map((e) => [
-                <strong className="text-[#0A0A0A]">{e.etiqueta}</strong>, e.personas, e.hombres, e.mujeres,
-                e.registros > 0 ? `${e.asistencia}% (${e.presentes} de ${e.registros})` : 'Sin registros',
-                <span className={e.faltas > 0 ? 'text-[#DC2626] font-semibold' : ''}>{e.faltas}</span>,
-              ]),
-              ...(informe.sinFechaNacimiento.personas > 0
-                ? [[
-                    <span className="text-[#6B6B6B]">Sin fecha de nacimiento</span>,
-                    informe.sinFechaNacimiento.personas, informe.sinFechaNacimiento.hombres, informe.sinFechaNacimiento.mujeres,
-                    informe.sinFechaNacimiento.registros > 0
-                      ? `${informe.sinFechaNacimiento.asistencia}% (${informe.sinFechaNacimiento.presentes} de ${informe.sinFechaNacimiento.registros})`
-                      : 'Sin registros',
-                    informe.sinFechaNacimiento.faltas,
-                  ]]
-                : []),
-            ]}
-          />
-        </Seccion>
+              ))}
+            </div>
+          </Seccion>
+        )}
 
-        <Seccion numero={4} titulo="Grupos de comunión">
-          <Tabla
-            columnas={['Grupo', 'Zona', 'Líder', 'Reunión', 'Discípulos', 'Reuniones', 'Asistencia', 'Atención', 'Seguim.']}
-            vacio="Todavía no hay grupos de comunión."
-            filas={informe.grupos.map((g) => [
-              <span><strong className="text-[#0A0A0A]">{g.nombre}</strong><br /><span className="text-[#A3A3A3]">{g.codigo}</span></span>,
-              g.zona, g.lider, g.reunion, g.miembros, g.sesiones, g.sesiones > 0 ? `${g.asistencia}%` : 'Sin reuniones',
-              <span className={g.rojos > 0 ? 'text-[#DC2626] font-semibold' : ''}>{g.rojos}</span>,
-              <span className={g.amarillos > 0 ? 'text-[#CA8A04] font-semibold' : ''}>{g.amarillos}</span>,
-            ])}
-          />
-        </Seccion>
+        {ver('edades') && (
+          <Seccion numero={numeroDe('edades')} titulo="Discípulos por edad">
+            <p className="text-[10px] text-[#8A8A8A] mb-2">
+              Edades calculadas al {fechaLarga(referenciaEdad)} (a partir de la fecha de nacimiento). Incluye a los discípulos registrados hasta el final del período; la asistencia es la del período.
+            </p>
+            <div className="space-y-1.5 mb-3">
+              {informe.edades.map((e) => (
+                <div key={e.clave} className="flex items-center gap-3 text-[11px] print-avoid-break">
+                  <span className="w-44 text-[#404040] font-medium">{e.etiqueta}</span>
+                  <div className="flex-1 h-3 bg-[#F2F2F2] rounded-full overflow-hidden">
+                    <div className="h-full bg-[#EA580C] rounded-full" style={{ width: `${totalEdades ? (e.personas / totalEdades) * 100 : 0}%` }} />
+                  </div>
+                  <span className="w-24 text-right text-[#404040]">{e.personas} ({totalEdades ? Math.round((e.personas / totalEdades) * 100) : 0}%)</span>
+                </div>
+              ))}
+            </div>
+            <Tabla
+              columnas={['Rango de edad', 'Discípulos', 'Hombres', 'Mujeres', 'Asistencia del período', 'Faltas']}
+              filas={[
+                ...informe.edades.map((e) => [
+                  <strong className="text-[#0A0A0A]">{e.etiqueta}</strong>, e.personas, e.hombres, e.mujeres,
+                  e.registros > 0 ? `${e.asistencia}% (${e.presentes} de ${e.registros})` : 'Sin registros',
+                  <span className={e.faltas > 0 ? 'text-[#DC2626] font-semibold' : ''}>{e.faltas}</span>,
+                ]),
+                ...(informe.sinFechaNacimiento.personas > 0
+                  ? [[
+                      <span className="text-[#6B6B6B]">Sin fecha de nacimiento</span>,
+                      informe.sinFechaNacimiento.personas, informe.sinFechaNacimiento.hombres, informe.sinFechaNacimiento.mujeres,
+                      informe.sinFechaNacimiento.registros > 0
+                        ? `${informe.sinFechaNacimiento.asistencia}% (${informe.sinFechaNacimiento.presentes} de ${informe.sinFechaNacimiento.registros})`
+                        : 'Sin registros',
+                      informe.sinFechaNacimiento.faltas,
+                    ]]
+                  : []),
+              ]}
+            />
+          </Seccion>
+        )}
 
-        <Seccion numero={5} titulo="Discípulos que requieren acompañamiento (estado actual)">
-          <Tabla
-            columnas={['Código', 'Miembro', 'Grupo', 'Fase', 'Mentor', 'Faltas seguidas', 'Última asistencia', 'Estado']}
-            vacio="Todos los discípulos asisten con regularidad."
-            filas={informe.cuidado.map((c) => [
-              c.codigo, <strong className="text-[#0A0A0A]">{c.nombre}</strong>, c.grupo, NOMBRE_FASE[c.fase] ?? c.fase, c.mentor,
-              c.faltas, c.ultimaAsistencia === 'Sin registro' ? c.ultimaAsistencia : fechaCorta(c.ultimaAsistencia),
-              <span className={c.semaforo === 'rojo' ? 'text-[#DC2626] font-semibold' : 'text-[#CA8A04] font-semibold'}>
-                {c.semaforo === 'rojo' ? 'Atención urgente' : 'Seguimiento'}
-              </span>,
-            ])}
-          />
-        </Seccion>
+        {ver('grupos') && (
+          <Seccion numero={numeroDe('grupos')} titulo="Grupos de comunión">
+            <Tabla
+              columnas={['Grupo', 'Zona', 'Líder', 'Reunión', 'Discípulos', 'Reuniones', 'Asistencia', 'Atención', 'Seguim.']}
+              vacio="Todavía no hay grupos de comunión."
+              filas={informe.grupos.map((g) => [
+                <span><strong className="text-[#0A0A0A]">{g.nombre}</strong><br /><span className="text-[#A3A3A3]">{g.codigo}</span></span>,
+                g.zona, g.lider, g.reunion, g.miembros, g.sesiones, g.sesiones > 0 ? `${g.asistencia}%` : 'Sin reuniones',
+                <span className={g.rojos > 0 ? 'text-[#DC2626] font-semibold' : ''}>{g.rojos}</span>,
+                <span className={g.amarillos > 0 ? 'text-[#CA8A04] font-semibold' : ''}>{g.amarillos}</span>,
+              ])}
+            />
+          </Seccion>
+        )}
 
-        <Seccion numero={6} titulo="Asistencia por grupo en el período">
-          <Tabla
-            columnas={['Fecha', 'Grupo', 'Tema', 'Presentes', 'Con permiso', 'Sin aviso']}
-            vacio="No hubo reuniones registradas en este período."
-            filas={informe.sesiones.map((s) => [
-              fechaCorta(s.fecha), s.grupo, s.tema, s.presentes, s.justificadas,
-              <span className={s.injustificadas > 0 ? 'text-[#DC2626] font-semibold' : ''}>{s.injustificadas}</span>,
-            ])}
-          />
-        </Seccion>
+        {ver('cuidado') && (
+          <Seccion numero={numeroDe('cuidado')} titulo="Discípulos que requieren acompañamiento (estado actual)">
+            <Tabla
+              columnas={['Código', 'Miembro', 'Edad', 'Grupo', 'Fase', 'Mentor', 'Faltas seguidas', 'Última asistencia', 'Estado']}
+              vacio="Todos los discípulos asisten con regularidad."
+              filas={informe.cuidado.map((c) => [
+                c.codigo, <strong className="text-[#0A0A0A]">{c.nombre}</strong>, c.edad !== null ? `${c.edad} años` : '—', c.grupo, NOMBRE_FASE[c.fase] ?? c.fase, c.mentor,
+                c.faltas, c.ultimaAsistencia === 'Sin registro' ? c.ultimaAsistencia : fechaCorta(c.ultimaAsistencia),
+                <span className={c.semaforo === 'rojo' ? 'text-[#DC2626] font-semibold' : 'text-[#CA8A04] font-semibold'}>
+                  {c.semaforo === 'rojo' ? 'Atención urgente' : 'Seguimiento'}
+                </span>,
+              ])}
+            />
+          </Seccion>
+        )}
 
-        <Seccion numero={7} titulo="Eventos del período">
-          <Tabla
-            columnas={['Fecha', 'Evento', 'Tipo', 'Lugar', 'Estado', 'Asistentes']}
-            vacio="No hubo eventos en este período."
-            filas={informe.eventos.map((e) => [
-              `${fechaCorta(e.fecha)} ${e.hora}`, <strong className="text-[#0A0A0A]">{e.titulo}</strong>, capitalizar(e.tipo), e.lugar,
-              NOMBRE_ESTADO_EVENTO[e.estado] ?? e.estado, e.asistentes,
-            ])}
-          />
-        </Seccion>
+        {ver('asistencia') && (
+          <Seccion numero={numeroDe('asistencia')} titulo="Asistencia por grupo en el período">
+            <Tabla
+              columnas={['Fecha', 'Grupo', 'Tema', 'Presentes', 'Con permiso', 'Sin aviso']}
+              vacio="No hubo reuniones registradas en este período."
+              filas={informe.sesiones.map((s) => [
+                fechaCorta(s.fecha), s.grupo, s.tema, s.presentes, s.justificadas,
+                <span className={s.injustificadas > 0 ? 'text-[#DC2626] font-semibold' : ''}>{s.injustificadas}</span>,
+              ])}
+            />
+          </Seccion>
+        )}
 
-        <Seccion numero={8} titulo="Equipo por rol">
-          <Tabla
-            columnas={['Nivel', 'Rol', 'Personas']}
-            filas={informe.roles.map((r) => [r.nivel, <strong className="text-[#0A0A0A]">{r.rol}</strong>, r.personas])}
-          />
-        </Seccion>
+        {ver('eventos') && (
+          <Seccion numero={numeroDe('eventos')} titulo="Eventos del período">
+            <Tabla
+              columnas={['Fecha', 'Evento', 'Tipo', 'Lugar', 'Estado', 'Asistentes']}
+              vacio="No hubo eventos en este período."
+              filas={informe.eventos.map((e) => [
+                `${fechaCorta(e.fecha)} ${e.hora}`, <strong className="text-[#0A0A0A]">{e.titulo}</strong>, capitalizar(e.tipo), e.lugar,
+                NOMBRE_ESTADO_EVENTO[e.estado] ?? e.estado, e.asistentes,
+              ])}
+            />
+          </Seccion>
+        )}
 
-        <Seccion numero={9} titulo="Nuevos discípulos del período">
-          <Tabla
-            columnas={['Código', 'Miembro', 'Grupo', 'Fase', 'Ingreso']}
-            vacio="No hubo ingresos en este período."
-            filas={informe.nuevos.map((n) => [
-              n.codigo, <strong className="text-[#0A0A0A]">{n.nombre}</strong>, n.grupo, NOMBRE_FASE[n.fase] ?? n.fase, fechaCorta(n.ingreso),
-            ])}
-          />
-        </Seccion>
+        {ver('equipo') && (
+          <Seccion numero={numeroDe('equipo')} titulo="Equipo por rol">
+            <Tabla
+              columnas={['Nivel', 'Rol', 'Personas']}
+              filas={informe.roles.map((r) => [r.nivel, <strong className="text-[#0A0A0A]">{r.rol}</strong>, r.personas])}
+            />
+          </Seccion>
+        )}
+
+        {ver('nuevos') && (
+          <Seccion numero={numeroDe('nuevos')} titulo="Nuevos discípulos del período">
+            <Tabla
+              columnas={['Código', 'Miembro', 'Edad', 'Grupo', 'Fase', 'Ingreso']}
+              vacio="No hubo ingresos en este período."
+              filas={informe.nuevos.map((n) => [
+                n.codigo, <strong className="text-[#0A0A0A]">{n.nombre}</strong>, n.edad !== null ? `${n.edad} años` : '—', n.grupo, NOMBRE_FASE[n.fase] ?? n.fase, fechaCorta(n.ingreso),
+              ])}
+            />
+          </Seccion>
+        )}
 
         <footer className="pt-10 grid grid-cols-2 gap-12 text-center text-[11px] text-[#6B6B6B] print-avoid-break">
           <div className="border-t border-[#A3A3A3] pt-1.5">Asistente Pastoral</div>

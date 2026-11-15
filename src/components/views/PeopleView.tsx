@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { textoEdad } from '../../utils/formato';
 import { 
   Users, 
   Search, 
@@ -46,9 +47,9 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
   });
 
   const exportCSV = () => {
-    const headers = 'ID,Nombre,Documento,Telefono,Email,Grupo,Fase,Semaforo,Inasistencias\n';
-    const rows = filteredPeople.map(p => 
-      `"${p.code}","${p.fullName}","${p.dni}","${p.phone}","${p.email}","${p.groupName}","${p.phase}","${p.status}",${p.consecutiveAbsences}`
+    const headers = 'ID,Nombre,Documento,Fecha de nacimiento,Edad,Telefono,Email,Grupo,Fase,Semaforo,Inasistencias\n';
+    const rows = filteredPeople.map(p =>
+      `"${p.code}","${p.fullName}","${p.dni}","${p.birthDate}","${p.birthDate ? p.age : ''}","${p.phone}","${p.email}","${p.groupName}","${p.phase}","${p.status}",${p.consecutiveAbsences}`
     ).join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -165,7 +166,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm text-[#0A0A0A] leading-snug">{person.fullName}</p>
-                    <p className="text-[11px] text-[#6B6B6B] mt-0.5">{person.code} • Doc. {person.dni}</p>
+                    <p className="text-[11px] text-[#6B6B6B] mt-0.5">{person.code} • Doc. {person.dni} • {textoEdad(person)}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${estado.chip}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${estado.punto}`} />
@@ -220,7 +221,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({
                           {person.fullName}
                         </button>
                         <span className="text-[10px] text-[#6B6B6B]">
-                          {person.code} • Doc. {person.dni}
+                          {person.code} • Doc. {person.dni} • {textoEdad(person)}
                         </span>
                       </div>
                     </div>

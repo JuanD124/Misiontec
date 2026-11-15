@@ -58,6 +58,8 @@ export interface MissionaryGroup {
   meetingTime: string;
   memberCount: number;
   averageAttendanceRate: number;
+  /** Reuniones con asistencia en las últimas 4 semanas; si es 0 no hay porcentaje que mostrar. */
+  meetingsCount: number;
   status: 'active' | 'watch' | 'inactive';
   criticalMembersCount: number;
 }

@@ -97,27 +97,63 @@ export async function registrarAsistencia(b: any): Promise<void> {
   if (!groupId || !date || !items || typeof items !== 'object') {
     throw new ErrorNegocio(400, 'Faltan datos de la asistencia (grupo, fecha o lista).');
   }
-  for (const estado of Object.values(items as Record<string, string>)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date)) || Number.isNaN(new Date(`${date}T00:00:00Z`).getTime()) ||
+      new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== String(date)) {
+    throw new ErrorNegocio(400, 'La fecha de la reunión no es válida.');
+  }
+  const lista = Object.entries(items as Record<string, string>);
+  if (lista.length === 0) throw new ErrorNegocio(400, 'La lista de asistencia está vacía.');
+  for (const [, estado] of lista) {
     if (!ESTADOS_ASISTENCIA.includes(estado)) {
       throw new ErrorNegocio(400, 'Estado de asistencia no válido.');
     }
   }
 
   await withTransaction(async (conn) => {
+    // Se tolera un día de diferencia por la zona horaria del servidor.
+    const [[fecha]]: any = await conn.query('SELECT (? > DATE_ADD(CURDATE(), INTERVAL 1 DAY)) AS futura', [date]);
+    if (fecha.futura) throw new ErrorNegocio(400, 'No se puede registrar asistencia de una fecha futura.');
+
+    const [[grupo]]: any = await conn.query('SELECT id_grupo FROM grupo WHERE id_grupo = ? AND activo = 1', [groupId]);
+    if (!grupo) throw new ErrorNegocio(404, 'El grupo no existe.');
+
+    const [miembros]: any = await conn.query(
+      'SELECT id_persona FROM persona WHERE id_grupo = ? AND activo = 1', [groupId]);
+    const delGrupo = new Set<string>(miembros.map((m: any) => String(m.id_persona)));
+    if (lista.some(([personId]) => !delGrupo.has(String(personId)))) {
+      throw new ErrorNegocio(400, 'La lista incluye personas que no son de este grupo.');
+    }
+
     await conn.query(
       `INSERT INTO sesion_asistencia (id_grupo, fecha, tema) VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE tema = VALUES(tema)`,
+       ON DUPLICATE KEY UPDATE tema = COALESCE(VALUES(tema), tema)`,
       [groupId, date, topic ?? null]);
     const [[sesion]]: any = await conn.query(
       'SELECT id_sesion FROM sesion_asistencia WHERE id_grupo = ? AND fecha = ?', [groupId, date]);
 
-    for (const [personId, estado] of Object.entries(items as Record<string, string>)) {
+    for (const [personId, estado] of lista) {
       await conn.query(
         `INSERT INTO detalle_asistencia (id_sesion, id_persona, estado) VALUES (?, ?, ?)
          ON DUPLICATE KEY UPDATE estado = VALUES(estado)`,
         [sesion.id_sesion, personId, estado]);
     }
   });
+}
+
+/** Asistencia ya guardada de un grupo en una fecha (para mostrarla y poder corregirla). */
+export async function asistenciaDeSesion(groupId: unknown, date: unknown) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date ?? '')) || !Number.isInteger(Number(groupId))) {
+    throw new ErrorNegocio(400, 'Indica el grupo y la fecha (AAAA-MM-DD).');
+  }
+  const [filas]: any = await pool.query(
+    `SELECT d.id_persona, d.estado
+       FROM sesion_asistencia s JOIN detalle_asistencia d ON d.id_sesion = s.id_sesion
+      WHERE s.id_grupo = ? AND s.fecha = ?`, [groupId, date]);
+  const [[sesion]]: any = await pool.query(
+    'SELECT COUNT(*) AS n FROM sesion_asistencia WHERE id_grupo = ? AND fecha = ?', [groupId, date]);
+  const items: Record<string, string> = {};
+  for (const f of filas) items[String(f.id_persona)] = f.estado;
+  return { registrada: Number(sesion.n) > 0, items };
 }
 
 const HASH_FALSO = hashClave('clave-que-nadie-usa');
@@ -224,6 +260,7 @@ export async function crearAcceso(b: any): Promise<number> {
     throw new ErrorNegocio(400, `La contraseña debe tener al menos ${CLAVE_MINIMA} caracteres.`);
   }
   if (b.email && !CORREO_VALIDO.test(b.email)) throw new ErrorNegocio(400, 'El correo no tiene un formato válido.');
+  const nacimiento = validarFechaNacimiento(b.birthDate, true);
 
   const { nombres, apellidos } = separarNombre(nombreCompleto);
 
@@ -238,10 +275,10 @@ export async function crearAcceso(b: any): Promise<number> {
     const [[{ siguiente }]]: any = await conn.query(
       "SELECT CONCAT('MT-', LPAD(IFNULL(MAX(id_persona), 0) + 1, 4, '0')) AS siguiente FROM persona");
     const [r]: any = await conn.query(
-      `INSERT INTO persona (codigo, numero_documento, nombres, apellidos, telefono, correo, fase, fecha_ingreso,
+      `INSERT INTO persona (codigo, numero_documento, nombres, apellidos, fecha_nacimiento, telefono, correo, fase, fecha_ingreso,
                             autoriza_datos, fecha_autorizacion, contrasena_hash)
-       VALUES (?, ?, ?, ?, ?, ?, 'liderazgo', CURDATE(), 1, NOW(), ?)`,
-      [siguiente, documento, nombres, apellidos, b.phone || null, b.email || null, hashClave(clave)]);
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'liderazgo', CURDATE(), 1, NOW(), ?)`,
+      [siguiente, documento, nombres, apellidos, nacimiento, b.phone || null, b.email || null, hashClave(clave)]);
     await conn.query(
       `INSERT INTO historial_discipulado (id_persona, fase, fecha_inicio, observaciones)
        VALUES (?, 'liderazgo', CURDATE(), 'Registro inicial')`, [r.insertId]);

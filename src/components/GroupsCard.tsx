@@ -52,8 +52,8 @@ export const GroupsCard: React.FC<GroupsCardProps> = ({ groups, onVerGrupos }) =
                   {g.meetingDay} {g.meetingTime} • {g.memberCount} {g.memberCount === 1 ? 'discípulo' : 'discípulos'}
                 </p>
               </div>
-              <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border ${colorPerseverancia(g.averageAttendanceRate)}`}>
-                {g.averageAttendanceRate}% perseverancia
+              <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border ${g.meetingsCount === 0 ? 'bg-[#F5F5F5] text-[#6B6B6B] border-[#E0E0E0]' : colorPerseverancia(g.averageAttendanceRate)}`}>
+                {g.meetingsCount === 0 ? 'Sin reuniones recientes' : `${g.averageAttendanceRate}% perseverancia`}
               </span>
             </li>
           ))}

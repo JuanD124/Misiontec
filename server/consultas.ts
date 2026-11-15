@@ -32,6 +32,9 @@ export interface GrupoConIndicadores {
   amarillos: number;
 }
 
+/** Días que cuenta la perseverancia de un grupo (4 semanas). */
+export const VENTANA_PERSEVERANCIA_DIAS = 28;
+
 /** Condición SQL: la persona p no tiene ningún rol vigente, es decir, es un discípulo y no parte del equipo. */
 export const ES_DISCIPULO = `NOT EXISTS (SELECT 1 FROM persona_rol pr WHERE pr.id_persona = p.id_persona AND pr.activo = 1)`;
 
@@ -97,12 +100,15 @@ export async function obtenerGruposConIndicadores(personas: PersonaConEstado[]):
     WHERE g.activo = 1
     ORDER BY g.id_grupo`);
 
+  // La perseverancia de un grupo se calcula con sus reuniones de las últimas 4 semanas.
   const [sesiones]: any = await pool.query(
-    'SELECT id_grupo, COUNT(*) AS total FROM sesion_asistencia GROUP BY id_grupo');
+    `SELECT id_grupo, COUNT(*) AS total FROM sesion_asistencia
+      WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL ${VENTANA_PERSEVERANCIA_DIAS} DAY) GROUP BY id_grupo`);
   const [detalle]: any = await pool.query(`
     SELECT s.id_grupo, d.estado
     FROM detalle_asistencia d
-    JOIN sesion_asistencia s ON s.id_sesion = d.id_sesion`);
+    JOIN sesion_asistencia s ON s.id_sesion = d.id_sesion
+    WHERE s.fecha >= DATE_SUB(CURDATE(), INTERVAL ${VENTANA_PERSEVERANCIA_DIAS} DAY)`);
 
   return grupos.map((fila: any) => {
     const miembros = personas.filter((p) => p.fila.id_grupo === fila.id_grupo);
@@ -148,7 +154,7 @@ export function personasParaPantalla(personas: PersonaConEstado[]) {
 }
 
 export function gruposParaPantalla(grupos: GrupoConIndicadores[]) {
-  return grupos.map(({ fila: r, miembros, asistencia, rojos }) => ({
+  return grupos.map(({ fila: r, miembros, sesiones, asistencia, rojos }) => ({
     id: String(r.id_grupo),
     code: r.codigo,
     name: r.nombre,
@@ -167,6 +173,7 @@ export function gruposParaPantalla(grupos: GrupoConIndicadores[]) {
     meetingTime: r.hora,
     memberCount: miembros,
     averageAttendanceRate: asistencia ?? 0,
+    meetingsCount: sesiones,
     status: ESTADO_GRUPO[r.estado],
     criticalMembersCount: rojos,
   }));
@@ -397,6 +404,7 @@ export async function informeGeneral(desdeEntrada?: unknown, hastaEntrada?: unkn
     .map((p) => ({
       codigo: p.fila.codigo,
       nombre: p.nombreCompleto,
+      edad: p.fila.edad ?? null,
       grupo: p.fila.grupo ?? 'Sin grupo',
       fase: p.fila.fase,
       mentor: p.fila.mentor ?? 'Sin asignar',
@@ -441,7 +449,8 @@ export async function informeGeneral(desdeEntrada?: unknown, hastaEntrada?: unkn
     GROUP BY r.id_rol, r.nombre, r.nivel_jerarquia
     ORDER BY r.nivel_jerarquia`);
   const [nuevos]: any = await pool.query(`
-    SELECT p.codigo, CONCAT(p.nombres, ' ', p.apellidos) AS nombre, g.nombre AS grupo, p.fase, p.fecha_ingreso
+    SELECT p.codigo, CONCAT(p.nombres, ' ', p.apellidos) AS nombre, TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, CURDATE()) AS edad,
+           g.nombre AS grupo, p.fase, p.fecha_ingreso
     FROM persona p LEFT JOIN grupo g ON g.id_grupo = p.id_grupo
     WHERE p.activo = 1 AND p.fecha_ingreso BETWEEN ? AND ? AND ${ES_DISCIPULO}
     ORDER BY p.fecha_ingreso DESC, p.id_persona DESC`, [desde, hasta]);
@@ -516,7 +525,7 @@ export async function informeGeneral(desdeEntrada?: unknown, hastaEntrada?: unkn
     })),
     roles: roles.map((r: any) => ({ rol: r.rol, nivel: Number(r.nivel), personas: Number(r.personas) })),
     nuevos: nuevos.map((n: any) => ({
-      codigo: n.codigo, nombre: n.nombre, grupo: n.grupo ?? 'Sin grupo', fase: n.fase, ingreso: n.fecha_ingreso,
+      codigo: n.codigo, nombre: n.nombre, edad: n.edad ?? null, grupo: n.grupo ?? 'Sin grupo', fase: n.fase, ingreso: n.fecha_ingreso,
     })),
   };
 }

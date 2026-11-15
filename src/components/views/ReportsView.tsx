@@ -136,6 +136,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <thead className="bg-[#FAFAFA] text-[#6B6B6B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8E8E8]">
                 <tr>
                   <th className="py-2.5 px-4.5">Discípulo</th>
+                  <th className="py-2.5 px-4.5">Edad</th>
                   <th className="py-2.5 px-4.5">Grupo</th>
                   <th className="py-2.5 px-4.5">Mentor</th>
                   <th className="py-2.5 px-4.5">Faltas seguidas</th>
@@ -154,6 +155,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   peopleInCare.map((p) => (
                     <tr key={p.id} className="hover:bg-[#FAFAFA] transition-colors">
                       <td className="py-3 px-4.5 font-medium text-[#0A0A0A]">{p.fullName}</td>
+                      <td className="py-3 px-4.5 text-[#404040]">{p.birthDate ? `${p.age} años` : '—'}</td>
                       <td className="py-3 px-4.5 text-[#404040]">{p.groupName}</td>
                       <td className="py-3 px-4.5 text-[#404040]">{p.mentorName}</td>
                       <td className="py-3 px-4.5 text-[#0A0A0A]">{p.consecutiveAbsences}</td>

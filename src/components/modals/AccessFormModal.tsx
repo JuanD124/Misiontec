@@ -3,6 +3,7 @@ import { X, KeyRound, CheckCircle2, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import { Person, UserRole } from '../../types';
 import { DatosAcceso } from '../../services/api';
 import { ROLES, infoRol } from '../../data/roles';
+import { edadDesde, hoyISO, textoEdad } from '../../utils/formato';
 
 interface AccessFormModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const AccessFormModal: React.FC<AccessFormModalProps> = ({
   const [dni, setDni] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [personaId, setPersonaId] = useState('');
   const [role, setRole] = useState<UserRole>('discipulador');
   const [password, setPassword] = useState('');
@@ -43,6 +45,7 @@ export const AccessFormModal: React.FC<AccessFormModalProps> = ({
     setDni('');
     setPhone('');
     setEmail('');
+    setBirthDate('');
     setPersonaId('');
     setRole(personToEdit?.accessRole ?? 'discipulador');
     setPassword('');
@@ -68,6 +71,8 @@ export const AccessFormModal: React.FC<AccessFormModalProps> = ({
       if (modo === 'nueva') {
         if (fullName.trim().length < 3) errs.fullName = 'Escribe el nombre completo.';
         if (!dni.trim()) errs.dni = 'Escribe el documento: es con el que iniciará sesión.';
+        if (!birthDate) errs.birthDate = 'Elige la fecha de nacimiento.';
+        else if (birthDate > hoyISO()) errs.birthDate = 'La fecha de nacimiento no puede ser futura.';
         if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = 'El correo no tiene un formato válido.';
       } else if (!personaId) {
         errs.personaId = 'Elige a la persona.';
@@ -83,7 +88,7 @@ export const AccessFormModal: React.FC<AccessFormModalProps> = ({
       if (editando) {
         await onUpdate(personToEdit!.id, password, role);
       } else if (modo === 'nueva') {
-        await onCreate({ fullName: fullName.trim(), dni: dni.trim(), phone: phone.trim(), email: email.trim(), role, password });
+        await onCreate({ fullName: fullName.trim(), dni: dni.trim(), phone: phone.trim(), email: email.trim(), birthDate, role, password });
       } else {
         await onUpdate(personaId, password, role);
       }
@@ -156,10 +161,19 @@ export const AccessFormModal: React.FC<AccessFormModalProps> = ({
                       <input type="text" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Opcional" className={campo(false)} />
                     </div>
                   </div>
-                  <div>
-                    <label className="block font-medium text-[#0A0A0A] mb-1">Correo</label>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Opcional" className={campo(Boolean(errores.email))} />
-                    {errores.email && <p className="mt-1 text-[11px] text-[#DC2626]">{errores.email}</p>}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-[#0A0A0A] mb-1">Fecha de nacimiento *</label>
+                      <input type="date" max={hoyISO()} value={birthDate} onChange={(e) => setBirthDate(e.target.value)} className={campo(Boolean(errores.birthDate))} />
+                      {birthDate && birthDate <= hoyISO()
+                        ? <p className="mt-1 text-[11px] text-[#6B6B6B]">Edad: <strong className="text-[#0A0A0A]">{edadDesde(birthDate)} años</strong></p>
+                        : errores.birthDate && <p className="mt-1 text-[11px] text-[#DC2626]">{errores.birthDate}</p>}
+                    </div>
+                    <div>
+                      <label className="block font-medium text-[#0A0A0A] mb-1">Correo</label>
+                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Opcional" className={campo(Boolean(errores.email))} />
+                      {errores.email && <p className="mt-1 text-[11px] text-[#DC2626]">{errores.email}</p>}
+                    </div>
                   </div>
                 </>
               ) : (
@@ -167,7 +181,7 @@ export const AccessFormModal: React.FC<AccessFormModalProps> = ({
                   <label className="block font-medium text-[#0A0A0A] mb-1">Persona *</label>
                   <select value={personaId} onChange={(e) => setPersonaId(e.target.value)} className={campo(Boolean(errores.personaId))}>
                     <option value="">Elige a la persona…</option>
-                    {sinAcceso.map((p) => <option key={p.id} value={p.id}>{p.fullName} · Doc. {p.dni}</option>)}
+                    {sinAcceso.map((p) => <option key={p.id} value={p.id}>{p.fullName} · Doc. {p.dni} · {textoEdad(p)}</option>)}
                   </select>
                   {sinAcceso.length === 0 && <p className="mt-1 text-[11px] text-[#6B6B6B]">Todas las personas registradas ya tienen acceso.</p>}
                   {errores.personaId && <p className="mt-1 text-[11px] text-[#DC2626]">{errores.personaId}</p>}

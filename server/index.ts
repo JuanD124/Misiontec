@@ -36,6 +36,7 @@ import {
   cambiarFase,
   desactivarPersona,
   registrarAsistencia,
+  asistenciaDeSesion,
   crearEvento,
   eliminarEvento,
   registrarAsistenciaEvento,
@@ -182,6 +183,14 @@ app.delete('/api/personas/:id', requiere('eliminar'), ruta(async (req, res) => {
   }
   await desactivarPersona(req.params.id);
   res.json({ ok: true });
+}));
+
+app.get('/api/asistencias', requiere('tomarAsistencia'), ruta(async (req, res) => {
+  const alcance = await calcularAlcance(req.sesion!);
+  if (!enAlcance(alcance, Number(req.query.groupId))) {
+    throw new ErrorNegocio(403, 'Ese grupo no es parte de tu alcance.');
+  }
+  res.json(await asistenciaDeSesion(req.query.groupId, req.query.date));
 }));
 
 app.post('/api/asistencias', requiere('tomarAsistencia'), ruta(async (req, res) => {

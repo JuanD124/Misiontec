@@ -1,4 +1,5 @@
 import React from 'react';
+import { textoEdad } from '../../utils/formato';
 import { 
   BookOpen, 
   ArrowRight
@@ -89,7 +90,7 @@ export const DiscipleshipView: React.FC<DiscipleshipViewProps> = ({
                             m.status === 'yellow' ? 'bg-[#CA8A04]' : 'bg-[#16A34A]'
                           }`} />
                         </div>
-                        <p className="text-[10px] text-[#6B6B6B] truncate">{m.groupName}</p>
+                        <p className="text-[10px] text-[#6B6B6B] truncate">{m.groupName} • {textoEdad(m)}</p>
                         <p className="text-[10px] text-[#6B6B6B] mt-1">Mentor: {m.mentorName}</p>
 
                         {next && onPromotePerson && (

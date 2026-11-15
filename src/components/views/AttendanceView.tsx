@@ -14,7 +14,7 @@ interface AttendanceViewProps {
     groupId: string, 
     date: string, 
     attendanceMap: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>
-  ) => void;
+  ) => Promise<boolean>;
 }
 
 export const AttendanceView: React.FC<AttendanceViewProps> = ({
@@ -22,6 +22,11 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   people,
   onSaveAttendance
 }) => {
+  const conReuniones = groups.filter((g) => g.meetingsCount > 0);
+  const promedio = conReuniones.length === 0
+    ? null
+    : Math.round((conReuniones.reduce((a, g) => a + g.averageAttendanceRate, 0) / conReuniones.length) * 10) / 10;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4.5 rounded-xl border border-[#E8E8E8] shadow-xs">
@@ -37,7 +42,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-[#16A34A] bg-[#FAFAFA] border border-[#BBF7D0] px-3 py-1 rounded-full flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5" /> 84.6% Perseverancia Promedio
+            <CheckCircle2 className="w-3.5 h-3.5" /> {promedio === null ? 'Sin reuniones en 4 semanas' : `${promedio}% Perseverancia Promedio (4 sem.)`}
           </span>
         </div>
       </div>
@@ -53,6 +58,10 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           <BarChart3 className="w-4 h-4 text-[#EA580C]" />
           Perseverancia por Grupo (Últimas 4 Semanas)
         </h2>
+        <p className="text-[11px] text-[#6B6B6B] -mt-1 mb-3">
+          Se calcula con las reuniones de las últimas 4 semanas: presentes ÷ total de registros de asistencia del grupo.
+          Las faltas con permiso y sin aviso cuentan como no presente. Un grupo sin reuniones en ese tiempo no tiene porcentaje.
+        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {groups.map((grp) => (
@@ -60,10 +69,11 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-serif font-bold text-[#0A0A0A] truncate">{grp.name}</span>
                 <span className={`font-serif font-bold ${
+                  grp.meetingsCount === 0 ? 'text-[#8A8A8A]' :
                   grp.averageAttendanceRate >= 85 ? 'text-[#16A34A]' :
                   grp.averageAttendanceRate >= 75 ? 'text-[#CA8A04]' : 'text-[#DC2626]'
                 }`}>
-                  {grp.averageAttendanceRate}%
+                  {grp.meetingsCount === 0 ? 'Sin reuniones recientes' : `${grp.averageAttendanceRate}%`}
                 </span>
               </div>
               <div className="w-full bg-[#E8E8E8] h-2 rounded-full overflow-hidden">

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { textoEdad } from '../../utils/formato';
 import { X, Users, CheckCircle2, RefreshCw, Search } from 'lucide-react';
 import { MissionEvent, Person } from '../../types';
 import { api } from '../../services/api';
@@ -116,7 +117,7 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({ event,
                       <input type="checkbox" checked={seleccion.has(id)} onChange={() => alternar(id)} className="w-4 h-4 accent-[#EA580C]" />
                       <span className="flex-1 min-w-0">
                         <span className="block font-medium text-[#0A0A0A] truncate">{p.fullName}</span>
-                        <span className="block text-[10px] text-[#6B6B6B] truncate">{p.groupName}</span>
+                        <span className="block text-[10px] text-[#6B6B6B] truncate">{p.groupName} • {textoEdad(p)}</span>
                       </span>
                     </label>
                   </li>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { textoEdad } from '../utils/formato';
 import { 
   HeartHandshake, 
   Clock, 
@@ -198,7 +199,7 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-sm text-[#0A0A0A] leading-snug">{person.fullName}</p>
-                  <p className="text-[11px] text-[#6B6B6B] mt-0.5">{person.code} • {person.groupName}</p>
+                  <p className="text-[11px] text-[#6B6B6B] mt-0.5">{person.code} • {person.groupName} • {textoEdad(person)}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     {getStatusBadge(person.status, person.consecutiveAbsences)}
                     {getPhaseBadge(person.phase)}
@@ -273,7 +274,7 @@ export const TrafficLightTable: React.FC<TrafficLightTableProps> = ({
                             {person.fullName}
                           </button>
                           <span className="text-[10px] text-[#6B6B6B]">
-                            {person.code} • Doc.: {person.dni}
+                            {person.code} • Doc.: {person.dni} • {textoEdad(person)}
                           </span>
                         </div>
                       </div>

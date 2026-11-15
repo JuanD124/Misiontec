@@ -16,9 +16,11 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
   const totalPeople = people.length;
   const activeGroups = groups.filter(g => g.status === 'active').length;
   
-  const averageAttendance = groups.length === 0
+  // Perseverancia = últimas 4 semanas. Solo cuentan los grupos con reuniones en ese tiempo (un grupo nuevo no baja el promedio).
+  const conReuniones = groups.filter(g => g.meetingsCount > 0);
+  const averageAttendance = conReuniones.length === 0
     ? '0.0'
-    : (groups.reduce((acc, curr) => acc + curr.averageAttendanceRate, 0) / groups.length).toFixed(1);
+    : (conReuniones.reduce((acc, curr) => acc + curr.averageAttendanceRate, 0) / conReuniones.length).toFixed(1);
 
   const criticalCount = people.filter(p => p.status === 'red').length;
 
@@ -69,6 +71,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
 
       <div 
         id="kpi-card-asistencia"
+        title="Promedio de la perseverancia de los grupos en las últimas 4 semanas. Perseverancia de un grupo = presentes ÷ registros de asistencia de sus reuniones de las últimas 4 semanas (con permiso o sin aviso cuentan como no presente)."
         className="bg-white border border-[#E8E8E8] rounded-xl p-4.5 shadow-xs hover:border-[#A3A3A3] transition-all group"
       >
         <div className="flex items-center justify-between mb-2">
@@ -78,9 +81,11 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
           </div>
         </div>
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-2xl font-serif font-bold text-[#0A0A0A] tracking-tight">{averageAttendance}%</span>
+          <span className="text-2xl font-serif font-bold text-[#0A0A0A] tracking-tight">
+            {conReuniones.length === 0 ? '—' : `${averageAttendance}%`}
+          </span>
           <span className="text-xs font-medium text-[#16A34A]">
-            perseverancia
+            perseverancia · 4 sem.
           </span>
         </div>
         <div className="w-full bg-[#FAFAFA] border border-[#E8E8E8] h-1.5 rounded-full overflow-hidden mt-2">

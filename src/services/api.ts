@@ -60,7 +60,7 @@ export interface InformeGeneral {
     miembros: number; sesiones: number; asistencia: number; rojos: number; amarillos: number;
   }[];
   cuidado: {
-    codigo: string; nombre: string; grupo: string; fase: string; mentor: string;
+    codigo: string; nombre: string; edad: number | null; grupo: string; fase: string; mentor: string;
     faltas: number; ultimaAsistencia: string; semaforo: 'rojo' | 'amarillo';
   }[];
   sesiones: {
@@ -69,7 +69,7 @@ export interface InformeGeneral {
   }[];
   eventos: { titulo: string; tipo: string; fecha: string; hora: string; lugar: string; estado: string; asistentes: number }[];
   roles: { rol: string; nivel: number; personas: number }[];
-  nuevos: { codigo: string; nombre: string; grupo: string; fase: string; ingreso: string }[];
+  nuevos: { codigo: string; nombre: string; edad: number | null; grupo: string; fase: string; ingreso: string }[];
 }
 
 export interface HistorialFase {
@@ -95,6 +95,7 @@ export interface DatosAcceso {
   dni: string;
   phone?: string;
   email?: string;
+  birthDate?: string;
   role: UserRole;
   password: string;
 }
@@ -168,6 +169,10 @@ export const api = {
     items: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>,
     topic?: string,
   ) => request('/api/asistencias', { method: 'POST', body: JSON.stringify({ groupId, date, items, topic }) }),
+
+  asistenciaDeSesion: (groupId: string, date: string) =>
+    request<{ registrada: boolean; items: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'> }>(
+      `/api/asistencias?groupId=${encodeURIComponent(groupId)}&date=${encodeURIComponent(date)}`),
 
   crearEvento: (data: DatosEvento) =>
     request<{ id: string }>('/api/eventos', { method: 'POST', body: JSON.stringify(data) }),

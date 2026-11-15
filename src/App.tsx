@@ -214,13 +214,15 @@ export default function App() {
     groupId: string,
     date: string,
     attendanceMap: Record<string, 'presente' | 'falta_justificada' | 'falta_injustificada'>
-  ) => {
+  ): Promise<boolean> => {
     try {
       await api.registrarAsistencia(groupId, date, attendanceMap);
       await loadData();
       showToast('Asistencia guardada y semáforo de riesgo recalculado automáticamente.');
+      return true;
     } catch (err) {
       if (!sesionExpirada(err)) showToast(`No se pudo guardar la asistencia: ${(err as Error).message}`, 'error');
+      return false;
     }
   };
 

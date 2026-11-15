@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { textoEdad } from '../../utils/formato';
 import { 
   HeartHandshake, 
   Clock, 
@@ -62,7 +63,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
                   >
                     {p.fullName}
                   </button>
-                  <p className="text-[10px] text-[#B91C1C] font-medium">{p.consecutiveAbsences} ausencias • {p.groupName}</p>
+                  <p className="text-[10px] text-[#B91C1C] font-medium">{p.consecutiveAbsences} ausencias • {p.groupName} • {textoEdad(p)}</p>
                 </div>
 
                 <button
@@ -95,7 +96,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
                   >
                     {p.fullName}
                   </button>
-                  <p className="text-[10px] text-[#854D0E] font-medium">{p.consecutiveAbsences} ausencias • {p.groupName}</p>
+                  <p className="text-[10px] text-[#854D0E] font-medium">{p.consecutiveAbsences} ausencias • {p.groupName} • {textoEdad(p)}</p>
                 </div>
 
                 <button

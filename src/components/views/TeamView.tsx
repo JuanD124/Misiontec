@@ -1,4 +1,5 @@
 import React from 'react';
+import { textoEdad } from '../../utils/formato';
 import { ShieldCheck, Plus, Pencil, UserX, Phone, Church, IdCard } from 'lucide-react';
 import { Person, UserRole } from '../../types';
 import { ROLES } from '../../data/roles';
@@ -93,6 +94,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ team, sesionId, onCreate, on
                           </p>
                           <p className="text-[11px] text-[#6B6B6B] flex flex-wrap items-center gap-x-3 gap-y-0.5">
                             <span className="flex items-center gap-1"><IdCard className="w-3 h-3" />{p.code} · Doc. {p.dni}</span>
+                            <span className="font-medium text-[#404040]">{textoEdad(p)}</span>
                             {p.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{p.phone}</span>}
                           </p>
                           {grupos.length > 0 && (

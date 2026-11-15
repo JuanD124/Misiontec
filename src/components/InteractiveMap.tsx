@@ -46,6 +46,7 @@ const escapar = (texto: string) =>
 const colorGrupo = (grp: MissionaryGroup) => {
   const critico = grp.status === 'watch' || grp.criticalMembersCount > 1;
   if (critico) return '#DC2626';
+  if (grp.meetingsCount === 0) return '#8A8A8A';
   return grp.averageAttendanceRate >= 85 ? '#16A34A' : '#CA8A04';
 };
 
@@ -433,12 +434,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <p className="text-sm font-serif font-bold text-[#0A0A0A]">{selectedGroup.memberCount}</p>
               </div>
               <div>
-                <p className="text-[10px] text-[#6B6B6B]">Perseverancia</p>
+                <p className="text-[10px] text-[#6B6B6B]">Perseverancia (4 sem.)</p>
                 <p className={`text-sm font-serif font-bold ${
+                  selectedGroup.meetingsCount === 0 ? 'text-[#8A8A8A] text-xs' :
                   selectedGroup.averageAttendanceRate >= 85 ? 'text-[#16A34A]' :
                   selectedGroup.averageAttendanceRate >= 75 ? 'text-[#CA8A04]' : 'text-[#DC2626]'
                 }`}>
-                  {selectedGroup.averageAttendanceRate}%
+                  {selectedGroup.meetingsCount === 0 ? 'Sin reuniones recientes' : `${selectedGroup.averageAttendanceRate}%`}
                 </p>
               </div>
             </div>

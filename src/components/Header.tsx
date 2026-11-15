@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { textoEdad } from '../utils/formato';
 import { 
   Search, 
   Bell, 
@@ -159,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-[#0A0A0A]">{person.fullName}</p>
-                        <p className="text-[10px] text-[#6B6B6B]">Doc.: {person.dni} • {person.groupName}</p>
+                        <p className="text-[10px] text-[#6B6B6B]">Doc.: {person.dni} • {person.groupName} • {textoEdad(person)}</p>
                       </div>
                     </div>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
