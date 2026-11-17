@@ -12,7 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Person, DiscipleshipPhase, UserRole } from '../../types';
-import { api, HistorialFase } from '../../services/api';
+import { api, HistorialFase, AsistenciaPersona } from '../../services/api';
 import { NOMBRE_FASE, fechaCorta, fechaLarga } from '../../utils/formato';
 import { ROLES, infoRol } from '../../data/roles';
 
@@ -36,6 +36,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
   onDelete,
 }) => {
   const [historial, setHistorial] = useState<HistorialFase[] | null>(null);
+  const [asistencia, setAsistencia] = useState<AsistenciaPersona | null>(null);
   const [clave, setClave] = useState('');
   const [rolElegido, setRolElegido] = useState<UserRole>('discipulador');
   const [mensajeAcceso, setMensajeAcceso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
@@ -43,12 +44,14 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
 
   useEffect(() => {
     setHistorial(null);
+    setAsistencia(null);
     setClave('');
     setMensajeAcceso(null);
     setRolElegido(person?.accessRole ?? 'discipulador');
     if (!person) return;
     let vigente = true;
     api.historial(person.id).then((h) => vigente && setHistorial(h)).catch(() => vigente && setHistorial([]));
+    api.asistenciaDePersona(person.id).then((a) => vigente && setAsistencia(a)).catch(() => undefined);
     return () => {
       vigente = false;
     };
@@ -188,6 +191,47 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({
                 Observación / petición de oración
               </p>
               <p className="text-[11px] leading-relaxed">{person.criticalNotes}</p>
+            </div>
+          )}
+
+          {asistencia && (
+            <div>
+              <h4 className="font-bold text-[#0A0A0A] mb-2 flex items-center gap-1.5">
+                <History className="w-4 h-4 text-[#EA580C]" />
+                Asistencia
+                {asistencia.resumen.porcentaje !== null && (
+                  <span className="ml-1 text-[10px] font-medium text-[#6B6B6B]">
+                    {asistencia.resumen.porcentaje}% · {asistencia.resumen.presentes} de {asistencia.resumen.total} reuniones
+                  </span>
+                )}
+              </h4>
+              {asistencia.reuniones.length === 0 ? (
+                <p className="text-[#8A8A8A] italic">Todavía no tiene reuniones de grupo registradas.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {asistencia.reuniones.map((r, i) => (
+                    <span
+                      key={i}
+                      title={`${r.grupo} · ${fechaCorta(r.fecha)}`}
+                      className={`px-2 py-1 rounded-md border text-[10px] font-medium ${
+                        r.estado === 'presente'
+                          ? 'bg-[#DCFCE7] text-[#166534] border-[#BBF7D0]'
+                          : r.estado === 'falta_justificada'
+                            ? 'bg-[#FEF9C3] text-[#854D0E] border-[#FEF08A]'
+                            : 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]'
+                      }`}
+                    >
+                      {fechaCorta(r.fecha).slice(0, 5)} · {r.estado === 'presente' ? 'Presente' : r.estado === 'falta_justificada' ? 'Con permiso' : 'Falta'}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {asistencia.eventos.length > 0 && (
+                <p className="mt-2 text-[11px] text-[#404040]">
+                  <strong className="text-[#0A0A0A]">Eventos a los que asistió:</strong>{' '}
+                  {asistencia.eventos.map((e) => `${e.titulo} (${fechaCorta(e.fecha)})`).join(' · ')}
+                </p>
+              )}
             </div>
           )}
 

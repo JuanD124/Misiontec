@@ -20,6 +20,8 @@ import {
   resumenParaDashboard,
   obtenerGruposCercanos,
   obtenerHistorial,
+  obtenerAsistenciaPersona,
+  reunionesRecientes,
   obtenerGrupoDePersona,
   obtenerAsistentesEvento,
   informeGeneral,
@@ -131,6 +133,14 @@ app.get('/api/personas/:id/historial', requiere('verMiembros'), ruta(async (req,
   res.json(await obtenerHistorial(req.params.id));
 }));
 
+app.get('/api/personas/:id/asistencias', requiere('verMiembros'), ruta(async (req, res) => {
+  const alcance = await calcularAlcance(req.sesion!);
+  if (!enAlcance(alcance, await obtenerGrupoDePersona(req.params.id))) {
+    throw new ErrorNegocio(403, 'Esa persona no es parte de tu grupo.');
+  }
+  res.json(await obtenerAsistenciaPersona(req.params.id));
+}));
+
 app.post('/api/personas', requiere('registrarMiembro'), ruta(async (req, res) => {
   const id = await registrarPersona(req.body);
   const personas = (await datosIniciales(req.sesion!)).people;
@@ -183,6 +193,10 @@ app.delete('/api/personas/:id', requiere('eliminar'), ruta(async (req, res) => {
   }
   await desactivarPersona(req.params.id);
   res.json({ ok: true });
+}));
+
+app.get('/api/asistencias/recientes', requiere('tomarAsistencia'), ruta(async (req, res) => {
+  res.json(await reunionesRecientes(await calcularAlcance(req.sesion!)));
 }));
 
 app.get('/api/asistencias', requiere('tomarAsistencia'), ruta(async (req, res) => {

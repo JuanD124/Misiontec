@@ -461,8 +461,10 @@ export async function registrarAsistenciaEvento(idEvento: string, ids: unknown, 
   }
 
   await withTransaction(async (conn) => {
-    const [[evento]]: any = await conn.query('SELECT id_evento FROM evento WHERE id_evento = ? AND activo = 1', [idEvento]);
+    const [[evento]]: any = await conn.query(
+      'SELECT id_evento, (fecha > DATE_ADD(CURDATE(), INTERVAL 1 DAY)) AS futuro FROM evento WHERE id_evento = ? AND activo = 1', [idEvento]);
     if (!evento) throw new ErrorNegocio(404, 'El evento no existe.');
+    if (Number(evento.futuro) === 1) throw new ErrorNegocio(400, 'Ese evento aún no ocurre: registra la asistencia el día del evento.');
 
     const [permitidas]: any = alcance.todos
       ? await conn.query('SELECT id_persona FROM persona WHERE activo = 1')

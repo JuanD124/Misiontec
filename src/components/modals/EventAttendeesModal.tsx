@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { textoEdad } from '../../utils/formato';
 import { X, Users, CheckCircle2, RefreshCw, Search } from 'lucide-react';
 import { MissionEvent, Person } from '../../types';
 import { api } from '../../services/api';
-import { fechaCorta } from '../../utils/formato';
+import { fechaCorta, textoEdad } from '../../utils/formato';
 
 interface EventAttendeesModalProps {
   event: MissionEvent | null;

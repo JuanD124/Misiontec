@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, MapPin, Users, CheckCircle2, CalendarDays, Plus, Trash2 } from 'lucide-react';
 import { MissionEvent } from '../../types';
-import { NOMBRE_TIPO_EVENTO, NOMBRE_ESTADO_EVENTO, fechaCorta } from '../../utils/formato';
+import { NOMBRE_TIPO_EVENTO, NOMBRE_ESTADO_EVENTO, fechaCorta, hoyISO } from '../../utils/formato';
 
 interface EventsViewProps {
   events: MissionEvent[];
@@ -128,7 +128,9 @@ export const EventsView: React.FC<EventsViewProps> = ({ events, onCreateEvent, o
                   {onManageAttendees && (
                     <button
                       onClick={() => onManageAttendees(evt)}
-                      className="px-3 py-1.5 bg-[#FAFAFA] hover:bg-[#F2F2F2] text-[#EA580C] border border-[#E0E0E0] rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                      disabled={evt.date.slice(0, 10) > hoyISO()}
+                      title={evt.date.slice(0, 10) > hoyISO() ? 'La asistencia se registra el día del evento' : undefined}
+                      className="px-3 py-1.5 bg-[#FAFAFA] hover:bg-[#F2F2F2] text-[#EA580C] border border-[#E0E0E0] rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Registrar asistentes
                     </button>

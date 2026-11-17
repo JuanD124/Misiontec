@@ -198,7 +198,7 @@ export function alertasParaPantalla(personas: PersonaConEstado[]) {
 export async function obtenerEventos() {
   const [rows]: any = await pool.query(`
     SELECT e.id_evento, e.titulo, e.fecha, TIME_FORMAT(e.hora, '%H:%i') AS hora, e.lugar, e.tipo,
-           e.publico_objetivo, e.estado, e.latitud, e.longitud,
+           e.publico_objetivo, e.estado, e.latitud, e.longitud, (e.fecha < CURDATE()) AS ya_paso,
            (SELECT COUNT(*) FROM asistencia_evento a WHERE a.id_evento = e.id_evento) AS asistentes
     FROM evento e
     WHERE e.activo = 1 ORDER BY e.fecha`);
@@ -214,7 +214,8 @@ export async function obtenerEventos() {
     targetAudience: r.publico_objetivo ?? '',
     lat: r.latitud === null ? null : Number(r.latitud),
     lng: r.longitud === null ? null : Number(r.longitud),
-    status: r.estado === 'cancelado' ? 'concluido' : r.estado,
+    // Un evento programado cuya fecha ya pasó se considera concluido.
+    status: r.estado === 'cancelado' || (r.estado === 'programado' && Number(r.ya_paso) === 1) ? 'concluido' : r.estado,
   }));
 }
 
@@ -275,6 +276,60 @@ export async function obtenerHistorial(idPersona: string) {
     from: h.fecha_inicio,
     to: h.fecha_fin,
     note: h.observaciones ?? '',
+  }));
+}
+
+/** Asistencia de una persona: sus reuniones de grupo (detalle_asistencia) y los eventos a los que asistió (asistencia_evento). */
+export async function obtenerAsistenciaPersona(idPersona: string) {
+  const [reuniones]: any = await pool.query(`
+    SELECT s.fecha, g.codigo, g.nombre AS grupo, d.estado
+    FROM detalle_asistencia d
+    JOIN sesion_asistencia s ON s.id_sesion = d.id_sesion
+    JOIN grupo g ON g.id_grupo = s.id_grupo
+    WHERE d.id_persona = ?
+    ORDER BY s.fecha DESC LIMIT 12`, [idPersona]);
+  const [[totales]]: any = await pool.query(`
+    SELECT COUNT(*) AS total, COALESCE(SUM(estado = 'presente'), 0) AS presentes,
+           COALESCE(SUM(estado = 'falta_justificada'), 0) AS justificadas,
+           COALESCE(SUM(estado = 'falta_injustificada'), 0) AS injustificadas
+    FROM detalle_asistencia WHERE id_persona = ?`, [idPersona]);
+  const [eventos]: any = await pool.query(`
+    SELECT e.titulo, e.tipo, e.fecha
+    FROM asistencia_evento a JOIN evento e ON e.id_evento = a.id_evento
+    WHERE a.id_persona = ? AND e.activo = 1
+    ORDER BY e.fecha DESC LIMIT 10`, [idPersona]);
+  const total = Number(totales.total);
+  return {
+    resumen: {
+      total,
+      presentes: Number(totales.presentes),
+      justificadas: Number(totales.justificadas),
+      injustificadas: Number(totales.injustificadas),
+      porcentaje: total > 0 ? Math.round((1000 * Number(totales.presentes)) / total) / 10 : null,
+    },
+    reuniones: reuniones.map((r: any) => ({ fecha: r.fecha, codigo: r.codigo, grupo: r.grupo, estado: r.estado })),
+    eventos: eventos.map((e: any) => ({ titulo: e.titulo, tipo: e.tipo, fecha: e.fecha })),
+  };
+}
+
+/** Últimas reuniones registradas (sesion_asistencia + detalle_asistencia) de los grupos que la persona puede ver. */
+export async function reunionesRecientes(alcance: Alcance, limite = 12) {
+  if (!alcance.todos && alcance.grupos.length === 0) return [];
+  const [filas]: any = await pool.query(`
+    SELECT s.fecha, g.id_grupo, g.codigo, g.nombre AS grupo, s.tema,
+           COALESCE(SUM(d.estado = 'presente'), 0) AS presentes,
+           COALESCE(SUM(d.estado = 'falta_justificada'), 0) AS justificadas,
+           COALESCE(SUM(d.estado = 'falta_injustificada'), 0) AS injustificadas
+    FROM sesion_asistencia s
+    JOIN grupo g ON g.id_grupo = s.id_grupo
+    LEFT JOIN detalle_asistencia d ON d.id_sesion = s.id_sesion
+    WHERE g.activo = 1 ${alcance.todos ? '' : 'AND g.id_grupo IN (?)'}
+    GROUP BY s.id_sesion, g.id_grupo
+    ORDER BY s.fecha DESC, g.id_grupo
+    LIMIT ?`, alcance.todos ? [limite] : [alcance.grupos, limite]);
+  return filas.map((f: any) => ({
+    fecha: f.fecha, groupId: String(f.id_grupo), codigo: f.codigo, grupo: f.grupo, tema: f.tema ?? '',
+    presentes: Number(f.presentes), justificadas: Number(f.justificadas), injustificadas: Number(f.injustificadas),
   }));
 }
 
@@ -438,7 +493,8 @@ export async function informeGeneral(desdeEntrada?: unknown, hastaEntrada?: unkn
     ORDER BY s.fecha DESC, g.id_grupo
     LIMIT 200`, [desde, hasta]);
   const [eventos]: any = await pool.query(`
-    SELECT e.titulo, e.tipo, e.fecha, TIME_FORMAT(e.hora, '%H:%i') AS hora, e.lugar, e.estado,
+    SELECT e.titulo, e.tipo, e.fecha, TIME_FORMAT(e.hora, '%H:%i') AS hora, e.lugar,
+           CASE WHEN e.estado = 'programado' AND e.fecha < CURDATE() THEN 'concluido' ELSE e.estado END AS estado,
            (SELECT COUNT(*) FROM asistencia_evento a WHERE a.id_evento = e.id_evento) AS asistentes
     FROM evento e WHERE e.activo = 1 AND e.fecha BETWEEN ? AND ? ORDER BY e.fecha DESC`, [desde, hasta]);
   const [roles]: any = await pool.query(`

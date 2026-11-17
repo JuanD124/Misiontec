@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   ClipboardCheck, 
   CheckCircle2, 
@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { MissionaryGroup, Person } from '../../types';
 import { QuickAttendance } from '../QuickAttendance';
+import { api, ReunionReciente } from '../../services/api';
+import { fechaCorta } from '../../utils/formato';
 
 interface AttendanceViewProps {
   groups: MissionaryGroup[];
@@ -22,6 +24,15 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   people,
   onSaveAttendance
 }) => {
+  const [recientes, setRecientes] = useState<ReunionReciente[]>([]);
+
+  // Se vuelve a leer cada vez que cambian los datos (por ejemplo, al guardar una asistencia).
+  useEffect(() => {
+    let vigente = true;
+    api.reunionesRecientes().then((r) => vigente && setRecientes(r)).catch(() => undefined);
+    return () => { vigente = false; };
+  }, [people, groups]);
+
   const conReuniones = groups.filter((g) => g.meetingsCount > 0);
   const promedio = conReuniones.length === 0
     ? null
@@ -52,6 +63,47 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         people={people}
         onSaveAttendance={onSaveAttendance}
       />
+
+      <div className="bg-white rounded-xl border border-[#E8E8E8] shadow-xs overflow-hidden">
+        <div className="px-4.5 py-3 border-b border-[#E8E8E8] bg-[#FAFAFA]">
+          <h2 className="text-sm font-serif font-bold text-[#0A0A0A] flex items-center gap-2">
+            <ClipboardCheck className="w-4 h-4 text-[#EA580C]" />
+            Reuniones registradas recientemente
+          </h2>
+          <p className="text-[11px] text-[#6B6B6B] mt-0.5">Lo que ya quedó guardado en la base de datos para cada reunión.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="text-[#6B6B6B] uppercase text-[10px] font-semibold tracking-wider border-b border-[#E8E8E8]">
+              <tr>
+                <th className="py-2 px-4.5">Fecha</th>
+                <th className="py-2 px-4.5">Grupo</th>
+                <th className="py-2 px-4.5 text-center">Presentes</th>
+                <th className="py-2 px-4.5 text-center">Con permiso</th>
+                <th className="py-2 px-4.5 text-center">Faltas</th>
+                <th className="py-2 px-4.5 text-center">Asistencia</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F2F2F2]">
+              {recientes.length === 0 ? (
+                <tr><td colSpan={6} className="py-5 text-center text-[#8A8A8A] italic">Todavía no hay reuniones registradas.</td></tr>
+              ) : recientes.map((r) => {
+                const total = r.presentes + r.justificadas + r.injustificadas;
+                return (
+                  <tr key={`${r.groupId}-${r.fecha}`}>
+                    <td className="py-2 px-4.5 font-medium text-[#0A0A0A]">{fechaCorta(r.fecha)}</td>
+                    <td className="py-2 px-4.5 text-[#404040]">{r.grupo} <span className="text-[#A3A3A3]">({r.codigo})</span></td>
+                    <td className="py-2 px-4.5 text-center text-[#16A34A] font-medium">{r.presentes}</td>
+                    <td className="py-2 px-4.5 text-center text-[#CA8A04] font-medium">{r.justificadas}</td>
+                    <td className="py-2 px-4.5 text-center text-[#DC2626] font-medium">{r.injustificadas}</td>
+                    <td className="py-2 px-4.5 text-center text-[#0A0A0A]">{total > 0 ? `${Math.round((100 * r.presentes) / total)}%` : '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div className="bg-white p-4.5 rounded-xl border border-[#E8E8E8] shadow-xs">
         <h2 className="text-sm font-serif font-bold text-[#0A0A0A] mb-3 flex items-center gap-2">

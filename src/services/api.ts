@@ -72,6 +72,19 @@ export interface InformeGeneral {
   nuevos: { codigo: string; nombre: string; edad: number | null; grupo: string; fase: string; ingreso: string }[];
 }
 
+export type EstadoAsistenciaApi = 'presente' | 'falta_justificada' | 'falta_injustificada';
+
+export interface AsistenciaPersona {
+  resumen: { total: number; presentes: number; justificadas: number; injustificadas: number; porcentaje: number | null };
+  reuniones: { fecha: string; codigo: string; grupo: string; estado: EstadoAsistenciaApi }[];
+  eventos: { titulo: string; tipo: string; fecha: string }[];
+}
+
+export interface ReunionReciente {
+  fecha: string; groupId: string; codigo: string; grupo: string; tema: string;
+  presentes: number; justificadas: number; injustificadas: number;
+}
+
 export interface HistorialFase {
   phase: DiscipleshipPhase;
   from: string;
@@ -140,6 +153,8 @@ export const api = {
     request(`/api/personas/${personId}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   historial: (personId: string) => request<HistorialFase[]>(`/api/personas/${personId}/historial`),
+  asistenciaDePersona: (personId: string) => request<AsistenciaPersona>(`/api/personas/${personId}/asistencias`),
+  reunionesRecientes: () => request<ReunionReciente[]>('/api/asistencias/recientes'),
 
   definirAcceso: (personId: string, contrasena: string, rol: UserRole) =>
     request(`/api/personas/${personId}/acceso`, { method: 'PUT', body: JSON.stringify({ contrasena, rol }) }),
